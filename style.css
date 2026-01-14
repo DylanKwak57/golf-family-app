@@ -5,32 +5,41 @@
 
 /* CSS Variables */
 :root {
-    /* Colors */
-    --primary: #10b981;
-    --primary-dark: #059669;
-    --primary-light: #34d399;
-    --secondary: #6366f1;
-    --accent: #f59e0b;
+    /* Colors - Gold & Black Luxury Theme */
+    --primary: #d4a855;
+    --primary-dark: #b8942e;
+    --primary-light: #f0d78c;
+    --secondary: #a88c4a;
+    --accent: #ffd700;
+    
+    /* Gold Shades */
+    --gold-50: #fefce8;
+    --gold-100: #f5e6b8;
+    --gold-200: #e8d48a;
+    --gold-300: #d4a855;
+    --gold-400: #c9a227;
+    --gold-500: #b8942e;
     
     /* Status Colors */
-    --status-normal: #10b981;
-    --status-cancelled: #ef4444;
-    --status-changed: #f59e0b;
+    --status-normal: #d4a855;
+    --status-cancelled: #8b0000;
+    --status-changed: #cd853f;
     
-    /* Backgrounds */
-    --bg-gradient-1: #0f172a;
-    --bg-gradient-2: #1e3a5f;
-    --bg-gradient-3: #134e4a;
+    /* Backgrounds - Pure Black */
+    --bg-gradient-1: #000000;
+    --bg-gradient-2: #0a0a0a;
+    --bg-gradient-3: #111111;
     
-    /* Glass */
-    --glass-bg: rgba(255, 255, 255, 0.08);
-    --glass-border: rgba(255, 255, 255, 0.15);
-    --glass-shadow: rgba(0, 0, 0, 0.3);
+    /* Glass - Dark with Gold hints */
+    --glass-bg: rgba(20, 20, 20, 0.85);
+    --glass-border: rgba(212, 168, 85, 0.25);
+    --glass-shadow: rgba(0, 0, 0, 0.6);
     
     /* Text */
-    --text-primary: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.7);
-    --text-muted: rgba(255, 255, 255, 0.5);
+    --text-primary: #f5f5f5;
+    --text-secondary: rgba(245, 245, 245, 0.75);
+    --text-muted: rgba(212, 168, 85, 0.6);
+    --text-gold: #d4a855;
     
     /* Spacing */
     --spacing-xs: 0.25rem;
@@ -87,8 +96,8 @@ body {
 .golf-ball {
     position: absolute;
     border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(255,255,255,0.05));
-    filter: blur(40px);
+    background: radial-gradient(circle at 30% 30%, rgba(212, 168, 85, 0.4), rgba(212, 168, 85, 0.05));
+    filter: blur(60px);
     animation: float 20s infinite ease-in-out;
 }
 
@@ -198,11 +207,12 @@ body {
 .logo-text {
     font-size: 2.5rem;
     font-weight: 700;
-    background: linear-gradient(135deg, var(--primary-light), var(--secondary));
+    background: linear-gradient(135deg, var(--gold-100), var(--gold-300), var(--gold-500));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: var(--spacing-xs);
+    text-shadow: 0 2px 20px rgba(212, 168, 85, 0.3);
 }
 
 .logo-subtitle {
@@ -241,9 +251,10 @@ body {
 }
 
 .lang-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: var(--primary);
+    background: rgba(212, 168, 85, 0.15);
+    border-color: var(--gold-300);
     transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(212, 168, 85, 0.2);
 }
 
 .lang-btn .flag {
@@ -341,7 +352,8 @@ body {
 
 /* Lesson Info Card */
 .lesson-info {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(99, 102, 241, 0.2));
+    background: linear-gradient(135deg, rgba(212, 168, 85, 0.15), rgba(30, 30, 30, 0.9));
+    border: 1px solid rgba(212, 168, 85, 0.3);
 }
 
 .lesson-header {
@@ -354,7 +366,8 @@ body {
 .lesson-number {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--primary-light);
+    color: var(--gold-200);
+    text-shadow: 0 0 20px rgba(212, 168, 85, 0.4);
 }
 
 .lesson-status {
@@ -364,9 +377,9 @@ body {
     font-weight: 500;
 }
 
-.status-normal { background: rgba(16, 185, 129, 0.3); color: #6ee7b7; }
-.status-cancelled { background: rgba(239, 68, 68, 0.3); color: #fca5a5; }
-.status-changed { background: rgba(245, 158, 11, 0.3); color: #fcd34d; }
+.status-normal { background: rgba(212, 168, 85, 0.25); color: var(--gold-200); border: 1px solid rgba(212, 168, 85, 0.4); }
+.status-cancelled { background: rgba(139, 0, 0, 0.3); color: #ff6b6b; border: 1px solid rgba(139, 0, 0, 0.4); }
+.status-changed { background: rgba(205, 133, 63, 0.3); color: #f4a460; border: 1px solid rgba(205, 133, 63, 0.4); }
 
 .lesson-details {
     display: flex;
@@ -427,8 +440,8 @@ body {
 
 .bay-input:focus {
     outline: none;
-    border-color: var(--primary);
-    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--gold-300);
+    background: rgba(212, 168, 85, 0.1);
 }
 
 .bay-input::placeholder {
@@ -438,10 +451,10 @@ body {
 /* Submit Button */
 .submit-btn {
     padding: var(--spacing-md) var(--spacing-lg);
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    border: none;
+    background: linear-gradient(135deg, var(--gold-300), var(--gold-500));
+    border: 1px solid rgba(212, 168, 85, 0.5);
     border-radius: var(--radius-md);
-    color: white;
+    color: #0a0a0a;
     font-size: 1rem;
     font-weight: 600;
     font-family: inherit;
@@ -455,7 +468,8 @@ body {
 
 .submit-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+    box-shadow: 0 10px 40px rgba(212, 168, 85, 0.5);
+    background: linear-gradient(135deg, var(--gold-200), var(--gold-400));
 }
 
 .submit-btn:disabled {
@@ -478,10 +492,11 @@ body {
 .current-bay {
     margin-top: var(--spacing-md);
     padding: var(--spacing-md);
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(212, 168, 85, 0.15);
+    border: 1px solid rgba(212, 168, 85, 0.3);
     border-radius: var(--radius-md);
     text-align: center;
-    color: var(--primary-light);
+    color: var(--gold-200);
 }
 
 /* Confirm Section */
@@ -542,12 +557,12 @@ body {
 }
 
 .checkbox-container:hover .checkmark {
-    border-color: var(--primary);
+    border-color: var(--gold-300);
 }
 
 .checkbox-container input:checked ~ .checkmark {
-    background: var(--primary);
-    border-color: var(--primary);
+    background: linear-gradient(135deg, var(--gold-300), var(--gold-500));
+    border-color: var(--gold-300);
 }
 
 .checkmark:after {
@@ -572,23 +587,26 @@ body {
    ======================================== */
 
 .admin-page .background-animation {
-    background: linear-gradient(135deg, #1e1b4b, #312e81, #1e3a5f);
+    background: linear-gradient(135deg, #000000, #0a0a0a, #111111);
 }
 
 .admin-header {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(139, 92, 246, 0.2));
+    background: linear-gradient(135deg, rgba(212, 168, 85, 0.2), rgba(30, 30, 30, 0.9));
+    border: 1px solid rgba(212, 168, 85, 0.3);
 }
 
 .admin-lesson {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.1));
+    background: linear-gradient(135deg, rgba(212, 168, 85, 0.15), rgba(20, 20, 20, 0.9));
+    border: 1px solid rgba(212, 168, 85, 0.25);
 }
 
 .edit-badge {
     padding: var(--spacing-xs) var(--spacing-md);
-    background: rgba(99, 102, 241, 0.3);
+    background: rgba(212, 168, 85, 0.2);
+    border: 1px solid rgba(212, 168, 85, 0.3);
     border-radius: var(--radius-xl);
     font-size: 0.8rem;
-    color: #a5b4fc;
+    color: var(--gold-200);
 }
 
 /* Radio Group */
@@ -618,16 +636,16 @@ body {
 }
 
 .radio-container input:checked + .radio-checkmark + .radio-label {
-    color: var(--primary-light);
+    color: var(--gold-200);
 }
 
 .radio-container input:checked ~ .radio-label {
-    color: var(--primary-light);
+    color: var(--gold-200);
 }
 
 .radio-container:has(input:checked) {
-    border-color: var(--primary);
-    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--gold-300);
+    background: rgba(212, 168, 85, 0.1);
 }
 
 .radio-checkmark {
@@ -641,7 +659,7 @@ body {
 }
 
 .radio-container input:checked + .radio-checkmark {
-    border-color: var(--primary);
+    border-color: var(--gold-300);
 }
 
 .radio-container input:checked + .radio-checkmark::after {
@@ -652,7 +670,7 @@ body {
     transform: translate(-50%, -50%);
     width: 10px;
     height: 10px;
-    background: var(--primary);
+    background: linear-gradient(135deg, var(--gold-200), var(--gold-400));
     border-radius: 50%;
 }
 
@@ -697,18 +715,18 @@ body {
 }
 
 .status-option input:checked + .status-card.normal {
-    border-color: var(--status-normal);
-    background: rgba(16, 185, 129, 0.2);
+    border-color: var(--gold-300);
+    background: rgba(212, 168, 85, 0.2);
 }
 
 .status-option input:checked + .status-card.cancelled {
-    border-color: var(--status-cancelled);
-    background: rgba(239, 68, 68, 0.2);
+    border-color: #8b0000;
+    background: rgba(139, 0, 0, 0.2);
 }
 
 .status-option input:checked + .status-card.changed {
-    border-color: var(--status-changed);
-    background: rgba(245, 158, 11, 0.2);
+    border-color: #cd853f;
+    background: rgba(205, 133, 63, 0.2);
 }
 
 .status-icon {
@@ -753,11 +771,11 @@ body {
 
 .form-select:focus {
     outline: none;
-    border-color: var(--secondary);
+    border-color: var(--gold-300);
 }
 
 .form-select option {
-    background: var(--bg-gradient-1);
+    background: #0a0a0a;
     color: var(--text-primary);
 }
 
@@ -765,12 +783,15 @@ body {
     width: 100%;
     padding: var(--spacing-lg);
     font-size: 1.1rem;
-    background: linear-gradient(135deg, var(--secondary), #8b5cf6);
+    background: linear-gradient(135deg, var(--gold-300), var(--gold-500));
+    border: 1px solid rgba(212, 168, 85, 0.5);
+    color: #0a0a0a;
     margin-bottom: var(--spacing-lg);
 }
 
 .save-btn:hover {
-    box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 10px 40px rgba(212, 168, 85, 0.5);
+    background: linear-gradient(135deg, var(--gold-200), var(--gold-400));
 }
 
 /* ========================================
@@ -783,12 +804,13 @@ body {
     left: 50%;
     transform: translateX(-50%) translateY(100px);
     padding: var(--spacing-md) var(--spacing-xl);
-    background: rgba(16, 185, 129, 0.95);
+    background: linear-gradient(135deg, var(--gold-300), var(--gold-500));
     border-radius: var(--radius-xl);
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 40px rgba(212, 168, 85, 0.4);
+    color: #0a0a0a;
     opacity: 0;
     visibility: hidden;
     transition: var(--transition-normal);
@@ -861,7 +883,7 @@ body {
     height: 24px;
     margin: -12px 0 0 -12px;
     border: 3px solid transparent;
-    border-top-color: var(--primary);
+    border-top-color: var(--gold-300);
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -901,7 +923,7 @@ body {
     font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: var(--spacing-sm);
-    color: var(--primary-light);
+    color: var(--gold-200);
 }
 
 .success-desc {

@@ -348,10 +348,12 @@ function showToast(message, type = 'success') {
     // Update icon and color based on type
     if (type === 'success') {
         toastIcon.textContent = '✅';
-        toast.style.background = 'rgba(16, 185, 129, 0.95)';
+        toast.style.background = 'linear-gradient(135deg, #d4a855, #b8942e)';
+        toast.style.color = '#0a0a0a';
     } else if (type === 'error') {
         toastIcon.textContent = '❌';
-        toast.style.background = 'rgba(239, 68, 68, 0.95)';
+        toast.style.background = 'linear-gradient(135deg, #8b0000, #5c0000)';
+        toast.style.color = '#ffffff';
     }
     
     // Show toast
