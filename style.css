@@ -25,15 +25,15 @@
     --status-cancelled: #8b0000;
     --status-changed: #cd853f;
     
-    /* Backgrounds - Pure Black */
-    --bg-gradient-1: #000000;
-    --bg-gradient-2: #0a0a0a;
-    --bg-gradient-3: #111111;
+    /* Backgrounds - Dark Gray (brighter) */
+    --bg-gradient-1: #1a1a1a;
+    --bg-gradient-2: #242424;
+    --bg-gradient-3: #2d2d2d;
     
     /* Glass - Dark with Gold hints */
-    --glass-bg: rgba(20, 20, 20, 0.85);
-    --glass-border: rgba(212, 168, 85, 0.25);
-    --glass-shadow: rgba(0, 0, 0, 0.6);
+    --glass-bg: rgba(40, 40, 40, 0.8);
+    --glass-border: rgba(212, 168, 85, 0.3);
+    --glass-shadow: rgba(0, 0, 0, 0.4);
     
     /* Text */
     --text-primary: #f5f5f5;
@@ -587,7 +587,7 @@ body {
    ======================================== */
 
 .admin-page .background-animation {
-    background: linear-gradient(135deg, #000000, #0a0a0a, #111111);
+    background: linear-gradient(135deg, #1a1a1a, #242424, #2d2d2d);
 }
 
 .admin-header {
@@ -769,9 +769,27 @@ body {
     background-size: 20px;
 }
 
-.form-select:focus {
+.form-select:focus,
+.form-input:focus {
     outline: none;
     border-color: var(--gold-300);
+}
+
+.form-input {
+    width: 100%;
+    padding: var(--spacing-md);
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: var(--transition-normal);
+}
+
+.form-input::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+    cursor: pointer;
 }
 
 .form-select option {

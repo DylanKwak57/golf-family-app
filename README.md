@@ -81,12 +81,10 @@ golf-family-app/
 
 ## 📞 Contact
 
-- **Dylan Kwak** (CEO)
-- Email: dylan@57tb.art
-- Company: 57 Total Beauty
+- **K Family** - 가족 골프 동호회
 
 ---
 
-© 2026 Dylan Kwak / 57 Total Beauty. All rights reserved.
+© 2026 K Family. All rights reserved.
 
 *"가족의 평생 취미 활동"* 🏌️
