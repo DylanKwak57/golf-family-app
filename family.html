@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏌️ Golf Family</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Sans+Thai:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="family-page">
+    <div class="background-animation">
+        <div class="golf-ball ball-1"></div>
+        <div class="golf-ball ball-2"></div>
+    </div>
+    
+    <div class="container">
+        <!-- Header -->
+        <header class="header glass-card">
+            <a href="index.html" class="back-btn">←</a>
+            <div class="header-title">
+                <span class="header-icon">🏌️</span>
+                <span data-i18n="title">Golf Family</span>
+            </div>
+            <div class="lang-toggle" onclick="toggleLanguage()">
+                <span id="currentLang">🇰🇷</span>
+            </div>
+        </header>
+        
+        <!-- Lesson Info Card -->
+        <div class="card glass-card lesson-info">
+            <div class="lesson-header">
+                <span class="lesson-number" id="lessonNumber">107회차</span>
+                <span class="lesson-status status-normal" id="lessonStatus" data-i18n="status_normal">✅ 정상</span>
+            </div>
+            <div class="lesson-details">
+                <div class="detail-item">
+                    <span class="detail-icon">📅</span>
+                    <span class="detail-text" id="lessonDate">목요일 (2026-01-16)</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-icon">⏰</span>
+                    <span class="detail-text">17:00 - 19:00</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-icon">📍</span>
+                    <span class="detail-text" id="lessonLocation">포탈라이</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bay Number Section -->
+        <div class="card glass-card bay-section">
+            <h2 class="section-title">
+                <span class="section-icon">🎯</span>
+                <span data-i18n="bay_title">Bay Number</span>
+            </h2>
+            <p class="section-desc" data-i18n="bay_desc">타석 번호를 입력하세요 (예: 62-65)</p>
+            
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="bayNumber" 
+                    class="bay-input" 
+                    placeholder="62-65"
+                    maxlength="20"
+                >
+                <button class="submit-btn bay-submit" onclick="submitBayNumber()" data-i18n="bay_submit">
+                    📤 등록
+                </button>
+            </div>
+            
+            <div class="current-bay" id="currentBay" style="display: none;">
+                <span data-i18n="current_bay">현재 등록:</span>
+                <strong id="currentBayValue">-</strong>
+            </div>
+        </div>
+        
+        <!-- Confirmation Section -->
+        <div class="card glass-card confirm-section">
+            <h2 class="section-title">
+                <span class="section-icon">✅</span>
+                <span data-i18n="confirm_title">레슨 확인</span>
+            </h2>
+            
+            <div class="confirm-list">
+                <div class="confirm-item">
+                    <div class="confirm-info">
+                        <span class="confirm-icon">🏌️</span>
+                        <span class="confirm-name">김프로</span>
+                    </div>
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="confirmKimPro" onchange="updateConfirmation()">
+                        <span class="checkmark"></span>
+                    </label>
+                </div>
+                
+                <div class="confirm-item">
+                    <div class="confirm-info">
+                        <span class="confirm-icon">👨‍👩‍👧‍👦</span>
+                        <span class="confirm-name">Dylan</span>
+                    </div>
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="confirmDylan" onchange="updateConfirmation()">
+                        <span class="checkmark"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <button class="submit-btn confirm-submit" id="confirmBtn" onclick="submitConfirmation()" disabled data-i18n="confirm_submit">
+                ✅ 확인 완료
+            </button>
+        </div>
+        
+        <!-- Toast Notification -->
+        <div class="toast" id="toast">
+            <span class="toast-icon">✅</span>
+            <span class="toast-message" id="toastMessage">저장되었습니다</span>
+        </div>
+        
+        <footer class="footer">
+            <p>© 2026 Dylan Kwak / 57 Total Beauty</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            initLanguage();
+            loadLessonData();
+        });
+    </script>
+</body>
+</html>

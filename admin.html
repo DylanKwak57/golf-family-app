@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🔧 Golf Family - Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Sans+Thai:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="admin-page">
+    <div class="background-animation admin-bg">
+        <div class="golf-ball ball-1"></div>
+        <div class="golf-ball ball-2"></div>
+    </div>
+    
+    <div class="container">
+        <!-- Header -->
+        <header class="header glass-card admin-header">
+            <a href="index.html" class="back-btn">←</a>
+            <div class="header-title">
+                <span class="header-icon">🔧</span>
+                <span>관리자 - Dylan</span>
+            </div>
+            <div class="header-spacer"></div>
+        </header>
+        
+        <!-- Current Lesson Card -->
+        <div class="card glass-card lesson-info admin-lesson">
+            <div class="lesson-header">
+                <span class="lesson-number" id="lessonNumber">107회차</span>
+                <span class="edit-badge">수정 가능</span>
+            </div>
+        </div>
+        
+        <!-- Lesson Type Section -->
+        <div class="card glass-card admin-section">
+            <h2 class="section-title">
+                <span class="section-icon">🏌️</span>
+                <span>레슨 유형</span>
+            </h2>
+            
+            <div class="radio-group">
+                <label class="radio-container">
+                    <input type="radio" name="lessonType" value="normal" checked>
+                    <span class="radio-checkmark"></span>
+                    <span class="radio-label">일반 레슨</span>
+                    <span class="radio-desc">포탈라이 (+1회차)</span>
+                </label>
+                
+                <label class="radio-container">
+                    <input type="radio" name="lessonType" value="field">
+                    <span class="radio-checkmark"></span>
+                    <span class="radio-label">필드 레슨</span>
+                    <span class="radio-desc">알파인 등 (+2회차)</span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Status Section -->
+        <div class="card glass-card admin-section">
+            <h2 class="section-title">
+                <span class="section-icon">📊</span>
+                <span>레슨 상태</span>
+            </h2>
+            
+            <div class="status-group">
+                <label class="status-option">
+                    <input type="radio" name="lessonStatus" value="normal" checked>
+                    <span class="status-card normal">
+                        <span class="status-icon">✅</span>
+                        <span class="status-text">정상</span>
+                    </span>
+                </label>
+                
+                <label class="status-option">
+                    <input type="radio" name="lessonStatus" value="cancelled">
+                    <span class="status-card cancelled">
+                        <span class="status-icon">❌</span>
+                        <span class="status-text">취소</span>
+                    </span>
+                </label>
+                
+                <label class="status-option">
+                    <input type="radio" name="lessonStatus" value="changed">
+                    <span class="status-card changed">
+                        <span class="status-icon">🔄</span>
+                        <span class="status-text">변경</span>
+                    </span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Schedule Section -->
+        <div class="card glass-card admin-section">
+            <h2 class="section-title">
+                <span class="section-icon">📅</span>
+                <span>일정 설정</span>
+            </h2>
+            
+            <div class="form-group">
+                <label class="form-label">요일</label>
+                <select id="lessonDay" class="form-select">
+                    <option value="monday">월요일</option>
+                    <option value="tuesday">화요일</option>
+                    <option value="wednesday">수요일</option>
+                    <option value="thursday" selected>목요일</option>
+                    <option value="friday">금요일</option>
+                    <option value="saturday">토요일</option>
+                    <option value="sunday">일요일</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">시간</label>
+                <select id="lessonTime" class="form-select">
+                    <option value="14:00">14:00</option>
+                    <option value="15:00">15:00</option>
+                    <option value="16:00">16:00</option>
+                    <option value="17:00" selected>17:00</option>
+                    <option value="18:00">18:00</option>
+                    <option value="19:00">19:00</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">장소</label>
+                <select id="lessonLocation" class="form-select">
+                    <option value="portalai" selected>포탈라이</option>
+                    <option value="alpine">알파인</option>
+                    <option value="other">기타</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Save Button -->
+        <button class="submit-btn save-btn" onclick="saveAdminSettings()">
+            💾 저장하기
+        </button>
+        
+        <!-- Toast Notification -->
+        <div class="toast" id="toast">
+            <span class="toast-icon">✅</span>
+            <span class="toast-message" id="toastMessage">저장되었습니다</span>
+        </div>
+        
+        <footer class="footer">
+            <p>© 2026 Dylan Kwak / 57 Total Beauty</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        // Initialize admin page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAdminData();
+        });
+    </script>
+</body>
+</html>
