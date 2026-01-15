@@ -1,0 +1,211 @@
+{
+  "name": "WF-Confirm: MVP 확인 응답",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "golf-confirm",
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "id": "webhook-confirm",
+      "name": "Webhook: 확인 수신",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "golf-confirm",
+      "notes": "MVP 웹앱에서 확인 버튼 클릭 시 트리거\n\nURL: https://dylan-automation.app.n8n.cloud/webhook/golf-confirm\n\nBody:\n- pageId: 노션 페이지 ID\n- field: 'kimPro' 또는 'dylan'\n- value: true"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-kimpro",
+              "leftValue": "={{ $json.body.field }}",
+              "rightValue": "kimPro",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-kimpro",
+      "name": "IF: 김프로 확인?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ],
+      "notes": "김프로 확인 vs Dylan 확인 분기"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Webhook: 확인 수신').first().json.body.pageId }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "김프로 확인|checkbox",
+              "checkboxValue": true
+            }
+          ]
+        }
+      },
+      "id": "notion-kimpro",
+      "name": "Notion: 김프로 확인 ✅",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        460,
+        200
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "AU29qZb94H2pm2jL",
+          "name": "Notion account"
+        }
+      },
+      "notes": "노션 페이지의 '김프로 확인' 체크박스를 true로 업데이트"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Webhook: 확인 수신').first().json.body.pageId }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Dylan 확인|checkbox",
+              "checkboxValue": true
+            }
+          ]
+        }
+      },
+      "id": "notion-dylan",
+      "name": "Notion: Dylan 확인 ✅",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        460,
+        400
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "AU29qZb94H2pm2jL",
+          "name": "Notion account"
+        }
+      },
+      "notes": "노션 페이지의 'Dylan 확인' 체크박스를 true로 업데이트"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "respond-kimpro",
+      "name": "Respond: 김프로 성공",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        680,
+        200
+      ],
+      "notes": "김프로 확인 완료 응답"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "respond-dylan",
+      "name": "Respond: Dylan 성공",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        680,
+        400
+      ],
+      "notes": "Dylan 확인 완료 응답"
+    }
+  ],
+  "connections": {
+    "Webhook: 확인 수신": {
+      "main": [
+        [
+          {
+            "node": "IF: 김프로 확인?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: 김프로 확인?": {
+      "main": [
+        [
+          {
+            "node": "Notion: 김프로 확인 ✅",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notion: Dylan 확인 ✅",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 김프로 확인 ✅": {
+      "main": [
+        [
+          {
+            "node": "Respond: 김프로 성공",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: Dylan 확인 ✅": {
+      "main": [
+        [
+          {
+            "node": "Respond: Dylan 성공",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "20298922d621602559fd122b2a5a456dd76c95af59a303f23bdb48333ec0e4fd"
+  }
+}

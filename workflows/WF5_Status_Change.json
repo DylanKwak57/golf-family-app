@@ -1,0 +1,328 @@
+{
+  "name": "WF5 - 상태 변경 알림",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "pagedUpdatedInDatabase",
+        "databaseId": "0c5ee4b0-26ab-4f0a-9881-5453b072a0cb",
+        "simple": false
+      },
+      "id": "notion-trigger",
+      "name": "Notion Trigger: 상태 변경",
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
+      "position": [220, 300],
+      "credentials": {
+        "notionApi": {
+          "id": "notion-credential-id",
+          "name": "Notion API"
+        }
+      },
+      "notes": "Golf Lesson DB에서 페이지 업데이트 감지\n\n⚠️ 설정:\n- Event: Page Updated in Database\n- Database: Golf Lesson\n- Poll: Every 5 minutes (운영 시)\n- Simplify: OFF"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 변경된 레슨 데이터 처리\nconst lesson = $input.first().json;\nconst props = lesson.properties;\n\n// 날짜 파싱\nconst lessonDateStr = props['수업 날짜']?.date?.start || '';\nconst lessonDate = new Date(lessonDateStr);\n\n// 한국어 요일\nconst koDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];\nconst thDays = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];\nconst dayOfWeekKo = koDays[lessonDate.getDay()];\nconst dayOfWeekTh = thDays[lessonDate.getDay()];\n\n// 날짜 포맷\nconst formattedDateKo = `${lessonDate.getFullYear()}-${String(lessonDate.getMonth() + 1).padStart(2, '0')}-${String(lessonDate.getDate()).padStart(2, '0')}`;\nconst formattedDateTh = `${String(lessonDate.getDate()).padStart(2, '0')}/${String(lessonDate.getMonth() + 1).padStart(2, '0')}/${lessonDate.getFullYear()}`;\n\n// 장소\nconst location = props['수업 장소']?.select?.name || '포탈라이';\nconst locationTh = location === '포탈라이' ? 'โปรทาลัย' : location;\n\n// 상태\nconst status = props['상태']?.select?.name || '';\n\n// 회차\nconst session = props['회차 ']?.title?.[0]?.plain_text || '';\n\n// 상태별 처리\nconst isCancelled = status === '취소';\nconst isChanged = status === '변경';\nconst needsNotification = isCancelled || isChanged;\n\nreturn {\n  pageId: lesson.id,\n  session: session,\n  lessonDate: lessonDateStr,\n  formattedDateKo: formattedDateKo,\n  formattedDateTh: formattedDateTh,\n  dayOfWeekKo: dayOfWeekKo,\n  dayOfWeekTh: dayOfWeekTh,\n  location: location,\n  locationTh: locationTh,\n  status: status,\n  isCancelled: isCancelled,\n  isChanged: isChanged,\n  needsNotification: needsNotification\n};"
+      },
+      "id": "code-process",
+      "name": "Code: 상태 데이터 처리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300],
+      "notes": "변경된 레슨 데이터 파싱:\n- 상태 확인 (취소/변경)\n- 날짜/요일 변환\n- 알림 필요 여부 판단"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-needs-notification",
+              "leftValue": "={{ $json.needsNotification }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-needs-notification",
+      "name": "IF: 알림 필요?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [660, 300],
+      "notes": "상태가 '취소' 또는 '변경'일 때만 알림 발송"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-cancelled",
+              "leftValue": "={{ $json.isCancelled }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-cancelled",
+      "name": "IF: 취소?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 200],
+      "notes": "취소 vs 변경 분기"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "lineNotifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U2168511c9cf9d66bb6cb0043f818bb1c\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n❌ 이번주 레슨 취소\\n\\n📅 \" + $json.dayOfWeekKo + \" (\" + $json.formattedDateKo + \")\\n레슨이 취소되었습니다.\\n\\n━━━━━━━━━━━━━━━━━━━━\\n❌ ยกเลิกเรียนกอล์ฟสัปดาห์นี้\\n\\n📅 \" + $json.dayOfWeekTh + \" (\" + $json.formattedDateTh + \")\\nยกเลิกแล้ว\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}"
+      },
+      "id": "line-family-cancel",
+      "name": "Line: 가족그룹 취소 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 100],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-auth-id",
+          "name": "Line Bot Auth"
+        }
+      },
+      "notes": "가족그룹에 취소 알림 (한국어+태국어)\n\n⚠️ 테스트: Dylan ID\n운영: 가족그룹 ID (C20b8ad1ae43e07dcb067f6f38349b602)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "lineNotifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U2168511c9cf9d66bb6cb0043f818bb1c\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n❌ 레슨 취소 안내\\n\\n📅 \" + $json.dayOfWeekKo + \" (\" + $json.formattedDateKo + \")\\n레슨이 취소되었습니다.\\n\\n죄송합니다 🙏\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}"
+      },
+      "id": "line-kimpro-cancel",
+      "name": "Line: 김프로 취소 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 100],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-auth-id",
+          "name": "Line Bot Auth"
+        }
+      },
+      "notes": "김프로에게 취소 알림\n\n⚠️ 테스트: Dylan ID\n운영: 김프로 ID (Ub46e21fd3af428c831ffe3a1d3c23128)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "lineNotifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U2168511c9cf9d66bb6cb0043f818bb1c\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n🔄 레슨 일정 변경\\n\\n📅 \" + $json.dayOfWeekKo + \" (\" + $json.formattedDateKo + \")\\n📍 \" + $json.location + \"\\n\\n일정이 변경되었습니다.\\n자세한 내용은 노션을 확인해주세요.\\n\\n━━━━━━━━━━━━━━━━━━━━\\n🔄 เปลี่ยนแปลงตารางเรียน\\n\\n📅 \" + $json.dayOfWeekTh + \" (\" + $json.formattedDateTh + \")\\n📍 \" + $json.locationTh + \"\\n\\nตารางเรียนเปลี่ยนแปลง\\nกรุณาตรวจสอบใน Notion\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}"
+      },
+      "id": "line-family-change",
+      "name": "Line: 가족그룹 변경 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-auth-id",
+          "name": "Line Bot Auth"
+        }
+      },
+      "notes": "가족그룹에 변경 알림 (한국어+태국어)\n\n⚠️ 테스트: Dylan ID\n운영: 가족그룹 ID (C20b8ad1ae43e07dcb067f6f38349b602)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "lineNotifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U2168511c9cf9d66bb6cb0043f818bb1c\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n🔄 레슨 일정 변경 안내\\n\\n📅 \" + $json.dayOfWeekKo + \" (\" + $json.formattedDateKo + \")\\n📍 \" + $json.location + \"\\n\\n일정이 변경되었습니다.\\n\\n확인 부탁드립니다 🙏\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}"
+      },
+      "id": "line-kimpro-change",
+      "name": "Line: 김프로 변경 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-auth-id",
+          "name": "Line Bot Auth"
+        }
+      },
+      "notes": "김프로에게 변경 알림\n\n⚠️ 테스트: Dylan ID\n운영: 김프로 ID (Ub46e21fd3af428c831ffe3a1d3c23128)"
+    },
+    {
+      "parameters": {},
+      "id": "no-op",
+      "name": "No Operation: 스킵",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [880, 500],
+      "notes": "상태가 '정상'일 때는 알림 발송하지 않음"
+    }
+  ],
+  "connections": {
+    "Notion Trigger: 상태 변경": {
+      "main": [
+        [
+          {
+            "node": "Code: 상태 데이터 처리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 상태 데이터 처리": {
+      "main": [
+        [
+          {
+            "node": "IF: 알림 필요?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: 알림 필요?": {
+      "main": [
+        [
+          {
+            "node": "IF: 취소?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation: 스킵",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: 취소?": {
+      "main": [
+        [
+          {
+            "node": "Line: 가족그룹 취소 알림",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Line: 가족그룹 변경 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line: 가족그룹 취소 알림": {
+      "main": [
+        [
+          {
+            "node": "Line: 김프로 취소 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line: 가족그룹 변경 알림": {
+      "main": [
+        [
+          {
+            "node": "Line: 김프로 변경 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bangkok"
+  },
+  "tags": [
+    {
+      "name": "Golf Family"
+    }
+  ]
+}

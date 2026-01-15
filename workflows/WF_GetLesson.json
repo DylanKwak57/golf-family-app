@@ -1,0 +1,148 @@
+{
+  "name": "WF-GetLesson: 최신 레슨 조회",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "golf-get-lesson",
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "id": "webhook-get-lesson",
+      "name": "Webhook: 레슨 조회",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "golf-get-lesson",
+      "notes": "MVP 웹앱에서 페이지 로드 시 호출\n\nURL: https://dylan-automation.app.n8n.cloud/webhook/golf-get-lesson\nMethod: GET"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "0c5ee4b0-26ab-4f0a-9881-5453b072a0cb",
+          "mode": "id"
+        },
+        "returnAll": false,
+        "limit": 1,
+        "sort": {
+          "sortValue": [
+            {
+              "key": "수업 날짜|date",
+              "direction": "descending"
+            }
+          ]
+        },
+        "simple": false
+      },
+      "id": "notion-get-latest",
+      "name": "Notion: 최신 레슨 조회",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        220,
+        300
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "AU29qZb94H2pm2jL",
+          "name": "Notion account"
+        }
+      },
+      "notes": "가장 최신 레슨 1개 조회\n정렬: 수업 날짜 내림차순"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 노션 데이터를 MVP용 JSON으로 변환\nconst lesson = $input.first().json;\nconst props = lesson.properties;\n\n// 날짜 파싱\nconst lessonDateStr = props['수업 날짜']?.date?.start || '';\nconst lessonDate = new Date(lessonDateStr);\n\n// 요일\nconst koDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];\nconst thDays = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];\n\n// 날짜 포맷\nconst year = lessonDate.getFullYear();\nconst month = String(lessonDate.getMonth() + 1).padStart(2, '0');\nconst day = String(lessonDate.getDate()).padStart(2, '0');\n\n// 장소\nconst locationKo = props['수업 장소']?.select?.name || '포탈라이';\nconst locationTh = locationKo === '포탈라이' ? 'โปรทาลัย' : locationKo;\n\n// 상태\nconst status = props['상태']?.select?.name || '정상';\n\n// 회차\nconst session = props['회차 ']?.title?.[0]?.plain_text || '';\n\n// 타석 번호\nconst bayNumber = props['타석 번호']?.rich_text?.[0]?.plain_text || '';\n\n// 확인 상태\nconst kimProConfirm = props['김프로 확인']?.checkbox || false;\nconst dylanConfirm = props['Dylan 확인']?.checkbox || false;\nconst calendarRegistered = props['캘린더 등록']?.checkbox || false;\n\nreturn {\n  pageId: lesson.id,\n  number: parseInt(session) || 0,\n  date: lessonDateStr,\n  formattedDate: {\n    ko: `${year}-${month}-${day}`,\n    th: `${day}/${month}/${year}`\n  },\n  dayOfWeek: {\n    ko: koDays[lessonDate.getDay()],\n    th: thDays[lessonDate.getDay()]\n  },\n  location: {\n    ko: locationKo,\n    th: locationTh\n  },\n  status: status,\n  bayNumber: bayNumber,\n  kimProConfirm: kimProConfirm,\n  dylanConfirm: dylanConfirm,\n  calendarRegistered: calendarRegistered\n};"
+      },
+      "id": "code-format",
+      "name": "Code: 데이터 가공",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "notes": "노션 데이터를 MVP 웹앱용 JSON 형식으로 변환"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "GET, POST, OPTIONS"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type"
+              }
+            ]
+          }
+        }
+      },
+      "id": "respond-json",
+      "name": "Respond: JSON 반환",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        300
+      ],
+      "notes": "MVP 웹앱에 JSON 데이터 반환\nCORS 헤더 포함"
+    }
+  ],
+  "connections": {
+    "Webhook: 레슨 조회": {
+      "main": [
+        [
+          {
+            "node": "Notion: 최신 레슨 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 최신 레슨 조회": {
+      "main": [
+        [
+          {
+            "node": "Code: 데이터 가공",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 데이터 가공": {
+      "main": [
+        [
+          {
+            "node": "Respond: JSON 반환",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "20298922d621602559fd122b2a5a456dd76c95af59a303f23bdb48333ec0e4fd"
+  }
+}

@@ -7,8 +7,9 @@
 // ========================================
 
 const CONFIG = {
-    // n8n Webhook URLs (TODO: 실제 URL로 변경)
+    // n8n Webhook URLs
     webhooks: {
+        getLesson: 'https://dylan-automation.app.n8n.cloud/webhook/golf-get-lesson',
         bayNumber: 'https://dylan-automation.app.n8n.cloud/webhook/golf-bay',
         confirm: 'https://dylan-automation.app.n8n.cloud/webhook/golf-confirm',
         sendBay: 'https://dylan-automation.app.n8n.cloud/webhook/golf-send-bay',
@@ -17,6 +18,9 @@ const CONFIG = {
     // Notion Database ID
     notionDbId: '0c5ee4b0-26ab-4f0a-9881-5453b072a0cb'
 };
+
+// 현재 레슨 데이터 저장
+let currentLessonData = null;
 
 // ========================================
 // Translations (i18n)
@@ -149,64 +153,92 @@ function t(key) {
 // Lesson Data Functions
 // ========================================
 
-function loadLessonData() {
-    // TODO: Notion API에서 실제 데이터 로드
-    // 지금은 더미 데이터 사용
-    
-    const lessonData = {
-        number: '107',
-        date: '목요일 (2026-01-16)',
-        dateTh: 'วันพฤหัสบดี (16/01/2026)',
-        location: '포탈라이',
-        locationTh: 'โปรทาลัย',
-        status: 'normal',
-        bayNumber: '',
-        kimProConfirm: false,
-        dylanConfirm: false
-    };
-    
-    // Update UI
+async function loadLessonData() {
+    try {
+        // n8n 웹훅에서 실제 노션 데이터 로드
+        const response = await fetch(CONFIG.webhooks.getLesson);
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch lesson data');
+        }
+        
+        const data = await response.json();
+        currentLessonData = data;
+        
+        // Update UI with real data
+        updateUIWithLessonData(data);
+        
+    } catch (error) {
+        console.error('Error loading lesson data:', error);
+        // 에러 시 더미 데이터로 폴백
+        const fallbackData = {
+            pageId: null,
+            number: 107,
+            date: '2026-01-16',
+            formattedDate: { ko: '2026-01-16', th: '16/01/2026' },
+            dayOfWeek: { ko: '목요일', th: 'วันพฤหัสบดี' },
+            location: { ko: '포탈라이', th: 'โปรทาลัย' },
+            status: '정상',
+            bayNumber: '',
+            kimProConfirm: false,
+            dylanConfirm: false
+        };
+        currentLessonData = fallbackData;
+        updateUIWithLessonData(fallbackData);
+    }
+}
+
+function updateUIWithLessonData(data) {
+    // 회차 표시
     const lessonNumber = document.getElementById('lessonNumber');
     if (lessonNumber) {
-        // 언어별 회차 표시
         if (currentLang === 'ko') {
-            lessonNumber.textContent = lessonData.number + '회차';
+            lessonNumber.textContent = data.number + '회차';
         } else {
-            lessonNumber.textContent = 'บทที่ ' + lessonData.number;  // 태국어: 레슨 번호
+            lessonNumber.textContent = 'บทที่ ' + data.number;
         }
     }
     
+    // 날짜 표시
     const lessonDate = document.getElementById('lessonDate');
     if (lessonDate) {
-        lessonDate.textContent = currentLang === 'ko' ? lessonData.date : lessonData.dateTh;
+        const dayOfWeek = currentLang === 'ko' ? data.dayOfWeek.ko : data.dayOfWeek.th;
+        const formattedDate = currentLang === 'ko' ? data.formattedDate.ko : data.formattedDate.th;
+        lessonDate.textContent = `${dayOfWeek} (${formattedDate})`;
     }
     
+    // 장소 표시
     const lessonLocation = document.getElementById('lessonLocation');
     if (lessonLocation) {
-        lessonLocation.textContent = currentLang === 'ko' ? lessonData.location : lessonData.locationTh;
+        lessonLocation.textContent = currentLang === 'ko' ? data.location.ko : data.location.th;
     }
     
-    // Update status
-    updateStatusDisplay(lessonData.status);
+    // 상태 표시
+    const statusMap = {
+        '정상': 'normal',
+        '취소': 'cancelled',
+        '변경': 'changed'
+    };
+    updateStatusDisplay(statusMap[data.status] || 'normal');
     
-    // Update bay number
-    if (lessonData.bayNumber) {
-        showCurrentBay(lessonData.bayNumber);
-        currentBayNumber = lessonData.bayNumber;
+    // 타석 번호 표시
+    if (data.bayNumber) {
+        showCurrentBay(data.bayNumber);
+        currentBayNumber = data.bayNumber;
     }
     
     // 김프로 전송 섹션 타석 표시
     const displayBayNumber = document.getElementById('displayBayNumber');
     if (displayBayNumber) {
-        displayBayNumber.textContent = lessonData.bayNumber || '-';
+        displayBayNumber.textContent = data.bayNumber || '-';
     }
     
-    // Update checkboxes
+    // 체크박스 상태 업데이트
     const kimProCheck = document.getElementById('confirmKimPro');
     const dylanCheck = document.getElementById('confirmDylan');
     
-    if (kimProCheck) kimProCheck.checked = lessonData.kimProConfirm;
-    if (dylanCheck) dylanCheck.checked = lessonData.dylanConfirm;
+    if (kimProCheck) kimProCheck.checked = data.kimProConfirm;
+    if (dylanCheck) dylanCheck.checked = data.dylanConfirm;
     
     updateConfirmation();
 }
@@ -253,14 +285,19 @@ function submitBayNumber() {
         return;
     }
     
-    // Send to n8n webhook
+    // Send to n8n webhook with pageId
     sendToWebhook(CONFIG.webhooks.bayNumber, {
+        pageId: currentLessonData?.pageId || null,
         bayNumber: value,
         timestamp: new Date().toISOString()
     })
     .then(() => {
         showToast(t('toast_bay_success'), 'success');
         showCurrentBay(value);
+        currentBayNumber = value;
+        if (currentLessonData) {
+            currentLessonData.bayNumber = value;
+        }
         input.value = '';
     })
     .catch(() => {
@@ -303,9 +340,11 @@ function sendToProKim() {
         return;
     }
     
-    // Send to n8n webhook
+    // Send to n8n webhook with pageId and location
     sendToWebhook(CONFIG.webhooks.sendBay, {
+        pageId: currentLessonData?.pageId || null,
         bayNumber: bayNumber,
+        location: currentLessonData?.location?.ko || '포탈라이',
         timestamp: new Date().toISOString()
     })
     .then(() => {
@@ -331,6 +370,42 @@ function updateConfirmation() {
     }
 }
 
+// 개별 체크박스 클릭 시 노션 업데이트
+async function onConfirmCheckboxChange(field) {
+    if (!currentLessonData || !currentLessonData.pageId) {
+        console.error('No lesson data available');
+        return;
+    }
+    
+    const checkbox = document.getElementById(field === 'kimPro' ? 'confirmKimPro' : 'confirmDylan');
+    if (!checkbox) return;
+    
+    try {
+        await sendToWebhook(CONFIG.webhooks.confirm, {
+            pageId: currentLessonData.pageId,
+            field: field,  // 'kimPro' 또는 'dylan'
+            value: checkbox.checked,
+            timestamp: new Date().toISOString()
+        });
+        
+        // 로컬 데이터 업데이트
+        if (field === 'kimPro') {
+            currentLessonData.kimProConfirm = checkbox.checked;
+        } else {
+            currentLessonData.dylanConfirm = checkbox.checked;
+        }
+        
+        showToast(t('toast_confirm_success'), 'success');
+        updateConfirmation();
+        
+    } catch (error) {
+        console.error('Confirm update error:', error);
+        // 실패 시 체크박스 원복
+        checkbox.checked = !checkbox.checked;
+        showToast(t('toast_error'), 'error');
+    }
+}
+
 function submitConfirmation() {
     const kimProCheck = document.getElementById('confirmKimPro');
     const dylanCheck = document.getElementById('confirmDylan');
@@ -340,18 +415,8 @@ function submitConfirmation() {
         return;
     }
     
-    // Send to n8n webhook
-    sendToWebhook(CONFIG.webhooks.confirm, {
-        kimProConfirm: kimProCheck.checked,
-        dylanConfirm: dylanCheck.checked,
-        timestamp: new Date().toISOString()
-    })
-    .then(() => {
-        showToast(t('toast_confirm_success'), 'success');
-    })
-    .catch(() => {
-        showToast(t('toast_error'), 'error');
-    });
+    // 둘 다 체크된 상태에서 확인 버튼 클릭 시
+    showToast(t('toast_confirm_success'), 'success');
 }
 
 // ========================================
@@ -493,4 +558,29 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.transition = 'opacity 0.5s ease';
         document.body.style.opacity = '1';
     }, 100);
+    
+    // 언어 초기화
+    initLanguage();
+    
+    // 페이지별 초기화
+    const path = window.location.pathname;
+    
+    if (path.includes('family.html')) {
+        // Family 페이지: 레슨 데이터 로드
+        loadLessonData();
+        
+        // 체크박스 이벤트 리스너 연결
+        const kimProCheck = document.getElementById('confirmKimPro');
+        const dylanCheck = document.getElementById('confirmDylan');
+        
+        if (kimProCheck) {
+            kimProCheck.addEventListener('change', () => onConfirmCheckboxChange('kimPro'));
+        }
+        if (dylanCheck) {
+            dylanCheck.addEventListener('change', () => onConfirmCheckboxChange('dylan'));
+        }
+    } else if (path.includes('admin.html')) {
+        // Admin 페이지: 관리자 데이터 로드
+        loadAdminData();
+    }
 });
