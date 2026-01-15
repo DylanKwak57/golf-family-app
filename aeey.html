@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏌️ Golf Family - Aeey</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="family-page">
+    <div class="background-animation">
+        <div class="golf-ball ball-1"></div>
+        <div class="golf-ball ball-2"></div>
+    </div>
+    
+    <div class="container">
+        <!-- Header -->
+        <header class="header glass-card">
+            <a href="index.html" class="back-btn">←</a>
+            <div class="header-title">
+                <span class="header-icon">🏌️</span>
+                <span>Golf Family</span>
+            </div>
+            <div class="user-badge">
+                <span>🇹🇭 Aeey</span>
+            </div>
+        </header>
+        
+        <!-- Lesson Info Card -->
+        <div class="card glass-card lesson-info">
+            <div class="lesson-header">
+                <span class="lesson-number" id="lessonNumber">บทที่ 107</span>
+                <span class="lesson-status status-normal" id="lessonStatus">✅ ปกติ</span>
+            </div>
+            <div class="lesson-details">
+                <div class="detail-item">
+                    <span class="detail-icon">📅</span>
+                    <span class="detail-text" id="lessonDate">วันพฤหัสบดี (16/01/2026)</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-icon">⏰</span>
+                    <span class="detail-text">17:00 - 19:00</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-icon">📍</span>
+                    <span class="detail-text" id="lessonLocation">โปรทาลัย</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bay Number Section -->
+        <div class="card glass-card bay-section">
+            <h2 class="section-title">
+                <span class="section-icon">🎯</span>
+                <span>หมายเลข Bay</span>
+            </h2>
+            <p class="section-desc">กรอกหมายเลข Bay (เช่น 62-65)</p>
+            
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="bayNumber" 
+                    class="bay-input" 
+                    placeholder="62-65"
+                    maxlength="20"
+                >
+                <button class="submit-btn bay-submit" onclick="submitBayNumber()">
+                    📤 ลงทะเบียน
+                </button>
+            </div>
+            
+            <div class="current-bay" id="currentBay" style="display: none;">
+                <span>ลงทะเบียนแล้ว:</span>
+                <strong id="currentBayValue">-</strong>
+            </div>
+        </div>
+        
+        <!-- Toast Notification -->
+        <div class="toast" id="toast">
+            <span class="toast-icon">✅</span>
+            <span class="toast-message" id="toastMessage">บันทึกแล้ว</span>
+        </div>
+        
+        <footer class="footer">
+            <p>© 2026 K Family 🏌️</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+    <script>
+        // Aeey 페이지 - 태국어 고정
+        currentLang = 'th';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            loadLessonData();
+        });
+        
+        // 태국어 상태 표시 함수
+        function updateStatusDisplayTh(status) {
+            const statusEl = document.getElementById('lessonStatus');
+            if (!statusEl) return;
+            
+            statusEl.className = 'lesson-status';
+            
+            switch (status) {
+                case 'normal':
+                    statusEl.classList.add('status-normal');
+                    statusEl.textContent = '✅ ปกติ';
+                    break;
+                case 'cancelled':
+                    statusEl.classList.add('status-cancelled');
+                    statusEl.textContent = '❌ ยกเลิก';
+                    break;
+                case 'changed':
+                    statusEl.classList.add('status-changed');
+                    statusEl.textContent = '🔄 เปลี่ยนแปลง';
+                    break;
+            }
+        }
+        
+        // 토스트 메시지 (태국어)
+        function showToastTh(message, type) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = toast.querySelector('.toast-icon');
+            
+            if (!toast || !toastMessage) return;
+            
+            toastMessage.textContent = message;
+            
+            if (type === 'success') {
+                toastIcon.textContent = '✅';
+                toast.style.background = 'linear-gradient(135deg, #d4a855, #b8942e)';
+                toast.style.color = '#0a0a0a';
+            } else if (type === 'error') {
+                toastIcon.textContent = '❌';
+                toast.style.background = 'linear-gradient(135deg, #8b0000, #5c0000)';
+                toast.style.color = '#ffffff';
+            }
+            
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // 타석 등록 (Aeey용 - 태국어 메시지)
+        function submitBayNumber() {
+            const input = document.getElementById('bayNumber');
+            const value = input.value.trim();
+            
+            if (!value) {
+                showToastTh('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+                return;
+            }
+            
+            const isValid = /^[\d\-,\s]+$/.test(value);
+            if (!isValid) {
+                showToastTh('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+                return;
+            }
+            
+            sendToWebhook(CONFIG.webhooks.bayNumber, {
+                pageId: currentLessonData?.pageId || null,
+                bayNumber: value,
+                timestamp: new Date().toISOString()
+            })
+            .then(() => {
+                showToastTh('ลงทะเบียนหมายเลข Bay แล้ว!', 'success');
+                showCurrentBay(value);
+                input.value = '';
+            })
+            .catch(() => {
+                showToastTh('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -997,3 +997,94 @@ body {
 .success-desc {
     color: var(--text-secondary);
 }
+
+/* ========================================
+   User Selection Page
+   ======================================== */
+
+.user-section {
+    margin-top: var(--spacing-xl);
+}
+
+.user-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.user-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    border-radius: 16px;
+    text-decoration: none;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    transition: all 0.3s ease;
+}
+
+.user-btn:hover {
+    transform: translateY(-3px);
+    background: rgba(212, 168, 85, 0.15);
+    border-color: var(--primary);
+    box-shadow: 0 8px 25px rgba(212, 168, 85, 0.2);
+}
+
+.user-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(212, 168, 85, 0.1);
+    border-radius: 12px;
+}
+
+.user-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-role {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+.aeey-btn:hover .user-icon {
+    background: rgba(255, 215, 0, 0.2);
+}
+
+.kimpro-btn:hover .user-icon {
+    background: rgba(212, 168, 85, 0.2);
+}
+
+.dylan-btn:hover .user-icon {
+    background: rgba(255, 215, 0, 0.3);
+}
+
+/* User Badge in Header */
+.user-badge {
+    background: var(--glass-bg);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    color: var(--text-gold);
+    border: 1px solid var(--glass-border);
+}
+
+.admin-badge {
+    background: linear-gradient(135deg, rgba(212, 168, 85, 0.3), rgba(255, 215, 0, 0.2));
+    border-color: var(--primary);
+}
+
+/* Single Confirm Item */
+.single-confirm {
+    padding: var(--spacing-lg);
+    background: rgba(212, 168, 85, 0.05);
+    border-radius: 12px;
+}

@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🏌️ Golf Family</title>
+    <title>🏌️ Golf Family - Dylan</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Noto+Sans+Thai:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="family-page">
     <div class="background-animation">
@@ -21,10 +21,10 @@
             <a href="index.html" class="back-btn">←</a>
             <div class="header-title">
                 <span class="header-icon">🏌️</span>
-                <span data-i18n="title">Golf Family</span>
+                <span>Golf Family</span>
             </div>
-            <div class="lang-toggle" onclick="toggleLanguage()">
-                <span id="currentLang">🇰🇷</span>
+            <div class="user-badge admin-badge">
+                <span>👑 Dylan</span>
             </div>
         </header>
         
@@ -32,7 +32,7 @@
         <div class="card glass-card lesson-info">
             <div class="lesson-header">
                 <span class="lesson-number" id="lessonNumber">107회차</span>
-                <span class="lesson-status status-normal" id="lessonStatus" data-i18n="status_normal">✅ 정상</span>
+                <span class="lesson-status status-normal" id="lessonStatus">✅ 정상</span>
             </div>
             <div class="lesson-details">
                 <div class="detail-item">
@@ -54,9 +54,9 @@
         <div class="card glass-card bay-section">
             <h2 class="section-title">
                 <span class="section-icon">🎯</span>
-                <span data-i18n="bay_title">Bay Number</span>
+                <span>Bay Number</span>
             </h2>
-            <p class="section-desc" data-i18n="bay_desc">타석 번호를 입력하세요 (예: 62-65)</p>
+            <p class="section-desc">타석 번호를 입력하세요 (예: 62-65)</p>
             
             <div class="input-group">
                 <input 
@@ -66,13 +66,13 @@
                     placeholder="62-65"
                     maxlength="20"
                 >
-                <button class="submit-btn bay-submit" onclick="submitBayNumber()" data-i18n="bay_submit">
+                <button class="submit-btn bay-submit" onclick="submitBayNumber()">
                     📤 등록
                 </button>
             </div>
             
             <div class="current-bay" id="currentBay" style="display: none;">
-                <span data-i18n="current_bay">현재 등록:</span>
+                <span>현재 등록:</span>
                 <strong id="currentBayValue">-</strong>
             </div>
         </div>
@@ -81,7 +81,7 @@
         <div class="card glass-card confirm-section">
             <h2 class="section-title">
                 <span class="section-icon">✅</span>
-                <span data-i18n="confirm_title">레슨 확인</span>
+                <span>레슨 확인</span>
             </h2>
             
             <div class="confirm-list">
@@ -98,7 +98,7 @@
                 
                 <div class="confirm-item">
                     <div class="confirm-info">
-                        <span class="confirm-icon">👨‍👩‍👧‍👦</span>
+                        <span class="confirm-icon">👑</span>
                         <span class="confirm-name">Dylan</span>
                     </div>
                     <label class="checkbox-container">
@@ -108,7 +108,7 @@
                 </div>
             </div>
             
-            <button class="submit-btn confirm-submit" id="confirmBtn" onclick="submitConfirmation()" disabled data-i18n="confirm_submit">
+            <button class="submit-btn confirm-submit" id="confirmBtn" onclick="submitConfirmation()" disabled>
                 ✅ 확인 완료
             </button>
         </div>
@@ -117,17 +117,17 @@
         <div class="card glass-card send-section">
             <h2 class="section-title">
                 <span class="section-icon">📤</span>
-                <span data-i18n="send_title">김프로에게 전송</span>
+                <span>김프로에게 전송</span>
             </h2>
-            <p class="section-desc" data-i18n="send_desc">타석 번호를 김프로에게 전송합니다</p>
+            <p class="section-desc">타석 번호를 김프로에게 전송합니다</p>
             
             <div class="current-bay-display">
-                <span class="current-bay-label" data-i18n="current_bay_label">현재 타석:</span>
+                <span class="current-bay-label">현재 타석:</span>
                 <strong class="current-bay-number" id="displayBayNumber">-</strong>
             </div>
             
             <button class="submit-btn send-btn" id="sendToProBtn" onclick="sendToProKim()">
-                🏌️ <span data-i18n="send_btn">김프로에게 전송</span>
+                🏌️ 김프로에게 전송
             </button>
         </div>
         
@@ -144,10 +144,22 @@
     
     <script src="script.js"></script>
     <script>
-        // Initialize page
+        // Dylan 페이지 - 한국어 고정, 전체 기능
+        currentLang = 'ko';
+        
         document.addEventListener('DOMContentLoaded', function() {
-            initLanguage();
             loadLessonData();
+            
+            // 체크박스 이벤트 리스너
+            const kimProCheck = document.getElementById('confirmKimPro');
+            const dylanCheck = document.getElementById('confirmDylan');
+            
+            if (kimProCheck) {
+                kimProCheck.addEventListener('change', updateConfirmation);
+            }
+            if (dylanCheck) {
+                dylanCheck.addEventListener('change', updateConfirmation);
+            }
         });
     </script>
 </body>
