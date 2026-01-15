@@ -1088,3 +1088,31 @@ body {
     background: rgba(212, 168, 85, 0.05);
     border-radius: 12px;
 }
+
+/* Simple User Buttons */
+.user-buttons-simple {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.user-btn-simple {
+    display: block;
+    padding: var(--spacing-lg) var(--spacing-xl);
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #0a0a0a;
+    text-decoration: none;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(212, 168, 85, 0.3);
+}
+
+.user-btn-simple:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(212, 168, 85, 0.5);
+    background: linear-gradient(135deg, var(--primary-light), var(--accent));
+}
