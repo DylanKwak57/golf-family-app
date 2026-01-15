@@ -1097,22 +1097,25 @@ body {
     margin-top: var(--spacing-lg);
 }
 
-.user-btn-simple {
+.user-btn-gold {
     display: block;
+    width: 100%;
     padding: var(--spacing-lg) var(--spacing-xl);
     text-align: center;
     font-size: 1.2rem;
     font-weight: 600;
-    color: #0a0a0a;
-    text-decoration: none;
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: #0a0a0a !important;
+    text-decoration: none !important;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light)) !important;
     border-radius: 12px;
+    border: none;
+    cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(212, 168, 85, 0.3);
 }
 
-.user-btn-simple:hover {
+.user-btn-gold:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 25px rgba(212, 168, 85, 0.5);
-    background: linear-gradient(135deg, var(--primary-light), var(--accent));
+    background: linear-gradient(135deg, var(--primary-light), var(--accent)) !important;
 }
