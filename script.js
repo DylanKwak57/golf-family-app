@@ -567,7 +567,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 페이지별 초기화
     const path = window.location.pathname;
     
-    if (path.includes('family.html')) {
+    if (path.includes('family.html') || path.includes('dylan.html') || path.includes('aeey.html') || path.includes('kimpro.html')) {
         // Family 페이지: 레슨 데이터 로드
         loadLessonData();
         
