@@ -37,7 +37,13 @@ const translations = {
         toast_bay_success: '타석 번호가 등록되었습니다!',
         toast_confirm_success: '확인이 완료되었습니다!',
         toast_error: '오류가 발생했습니다. 다시 시도해주세요.',
-        toast_saved: '저장되었습니다!'
+        toast_saved: '저장되었습니다!',
+        send_title: '김프로에게 전송',
+        send_desc: '타석 번호를 김프로에게 전송합니다',
+        current_bay_label: '현재 타석:',
+        send_btn: '김프로에게 전송',
+        toast_send_success: '김프로에게 전송되었습니다!',
+        toast_no_bay: '타석 번호가 없습니다. 먼저 등록해주세요.'
     },
     th: {
         title: 'Golf Family',
@@ -53,7 +59,13 @@ const translations = {
         toast_bay_success: 'ลงทะเบียนหมายเลข Bay แล้ว!',
         toast_confirm_success: 'ยืนยันเรียบร้อยแล้ว!',
         toast_error: 'เกิดข้อผิดพลาด กรุณาลองใหม่',
-        toast_saved: 'บันทึกแล้ว!'
+        toast_saved: 'บันทึกแล้ว!',
+        send_title: 'ส่งถึง Pro Kim',
+        send_desc: 'ส่งหมายเลข Bay ถึง Pro Kim',
+        current_bay_label: 'Bay ปัจจุบัน:',
+        send_btn: 'ส่งถึง Pro Kim',
+        toast_send_success: 'ส่งถึง Pro Kim แล้ว!',
+        toast_no_bay: 'ไม่มีหมายเลข Bay กรุณาลงทะเบียนก่อน'
     }
 };
 
@@ -180,6 +192,13 @@ function loadLessonData() {
     // Update bay number
     if (lessonData.bayNumber) {
         showCurrentBay(lessonData.bayNumber);
+        currentBayNumber = lessonData.bayNumber;
+    }
+    
+    // 김프로 전송 섹션 타석 표시
+    const displayBayNumber = document.getElementById('displayBayNumber');
+    if (displayBayNumber) {
+        displayBayNumber.textContent = lessonData.bayNumber || '-';
     }
     
     // Update checkboxes
@@ -257,6 +276,44 @@ function showCurrentBay(value) {
         valueEl.textContent = value;
         container.style.display = 'block';
     }
+    
+    // 김프로 전송 섹션의 타석 번호도 업데이트
+    const displayBayNumber = document.getElementById('displayBayNumber');
+    if (displayBayNumber) {
+        displayBayNumber.textContent = value || '-';
+    }
+}
+
+// ========================================
+// Send to Pro Kim Functions
+// ========================================
+
+let currentBayNumber = '';
+
+function sendToProKim() {
+    // 현재 타석 번호 가져오기
+    const bayInput = document.getElementById('bayNumber');
+    const displayBay = document.getElementById('displayBayNumber');
+    
+    // 입력 필드에 값이 있으면 그걸 사용, 아니면 표시된 값 사용
+    const bayNumber = bayInput?.value?.trim() || displayBay?.textContent || currentBayNumber;
+    
+    if (!bayNumber || bayNumber === '-') {
+        showToast(t('toast_no_bay'), 'error');
+        return;
+    }
+    
+    // Send to n8n webhook
+    sendToWebhook(CONFIG.webhooks.sendBay, {
+        bayNumber: bayNumber,
+        timestamp: new Date().toISOString()
+    })
+    .then(() => {
+        showToast(t('toast_send_success'), 'success');
+    })
+    .catch(() => {
+        showToast(t('toast_error'), 'error');
+    });
 }
 
 // ========================================

@@ -1,0 +1,223 @@
+{
+  "name": "WF4-Webhook - 타석 전송 (김프로)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "golf-send-bay",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: 타석 전송",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [220, 300],
+      "webhookId": "golf-send-bay",
+      "notes": "웹앱에서 '김프로에게 전송' 버튼 클릭 시 트리거\n\nURL: https://dylan-automation.app.n8n.cloud/webhook/golf-send-bay\n\nBody:\n- bayNumber: 타석 번호"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "databaseId": "0c5ee4b0-26ab-4f0a-9881-5453b072a0cb",
+        "returnAll": false,
+        "limit": 1,
+        "filterType": "none",
+        "sort": {
+          "sortValue": [
+            {
+              "key": "수업 날짜",
+              "type": "timestamp",
+              "direction": "descending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notion-get-lesson",
+      "name": "Notion: 최신 레슨 조회",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [440, 300],
+      "credentials": {
+        "notionApi": {
+          "id": "notion-credential-id",
+          "name": "Notion API"
+        }
+      },
+      "notes": "최신 레슨 페이지에서 타석 번호 조회\n\n설정:\n- Database: Golf Lesson\n- Limit: 1\n- Sort: 수업 날짜 Descending\n- Simplify: OFF"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Webhook에서 받은 타석 번호 또는 Notion에서 조회한 타석 번호 사용\nconst webhookData = $('Webhook: 타석 전송').first().json;\nconst notionData = $input.first().json;\n\n// Webhook에서 받은 타석 번호 (웹앱에서 전송)\nconst webhookBay = webhookData.body?.bayNumber || '';\n\n// Notion에서 조회한 타석 번호\nconst props = notionData.properties;\nconst notionBay = props['타석 번호']?.rich_text?.[0]?.plain_text || '';\n\n// 웹앱에서 보낸 값 우선, 없으면 Notion 값 사용\nconst bayNumber = webhookBay || notionBay;\n\n// 회차\nconst session = props['회차 ']?.title?.[0]?.plain_text || '';\n\n// 장소\nconst location = props['수업 장소']?.select?.name || '포탈라이';\n\nreturn {\n  bayNumber: bayNumber,\n  session: session,\n  location: location,\n  hasBayNumber: bayNumber.length > 0\n};"
+      },
+      "id": "code-extract",
+      "name": "Code: 타석 번호 확인",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300],
+      "notes": "웹앱에서 받은 타석 번호 또는 Notion 최신 타석 번호 사용"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-has-bay",
+              "leftValue": "={{ $json.hasBayNumber }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-check",
+      "name": "IF: 타석 있음?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 300],
+      "notes": "타석 번호가 있을 때만 김프로에게 전송"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "lineNotifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U2168511c9cf9d66bb6cb0043f818bb1c\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n🏌️ 골프 레슨 타석 안내\\n\\n📍 \" + $json.location + \"\\n🎯 타석: \" + $json.bayNumber + \"\\n\\n곧 뵙겠습니다! 🙏\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}"
+      },
+      "id": "line-kimpro",
+      "name": "Line: 김프로 타석 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-auth-id",
+          "name": "Line Bot Auth"
+        }
+      },
+      "notes": "김프로에게 타석 알림 발송\n\n⚠️ 테스트 시 to를 Dylan ID로 유지:\nU2168511c9cf9d66bb6cb0043f818bb1c\n\n운영 시 복원:\nUb46e21fd3af428c831ffe3a1d3c23128"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"김프로에게 전송 완료!\", \"bayNumber\": $json.bayNumber } }}"
+      },
+      "id": "respond-success",
+      "name": "Respond: 전송 완료",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1320, 200],
+      "notes": "웹앱에 전송 완료 응답"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"message\": \"타석 번호가 없습니다\" } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "respond-error",
+      "name": "Respond: 에러",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1100, 400],
+      "notes": "타석 번호 없을 때 에러 응답"
+    }
+  ],
+  "connections": {
+    "Webhook: 타석 전송": {
+      "main": [
+        [
+          {
+            "node": "Notion: 최신 레슨 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 최신 레슨 조회": {
+      "main": [
+        [
+          {
+            "node": "Code: 타석 번호 확인",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 타석 번호 확인": {
+      "main": [
+        [
+          {
+            "node": "IF: 타석 있음?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: 타석 있음?": {
+      "main": [
+        [
+          {
+            "node": "Line: 김프로 타석 알림",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: 에러",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line: 김프로 타석 알림": {
+      "main": [
+        [
+          {
+            "node": "Respond: 전송 완료",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bangkok"
+  },
+  "tags": [
+    {
+      "name": "Golf Family"
+    }
+  ]
+}

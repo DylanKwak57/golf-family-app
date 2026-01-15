@@ -113,6 +113,24 @@
             </button>
         </div>
         
+        <!-- Send to Pro Kim Section -->
+        <div class="card glass-card send-section">
+            <h2 class="section-title">
+                <span class="section-icon">📤</span>
+                <span data-i18n="send_title">김프로에게 전송</span>
+            </h2>
+            <p class="section-desc" data-i18n="send_desc">타석 번호를 김프로에게 전송합니다</p>
+            
+            <div class="current-bay-display">
+                <span class="current-bay-label" data-i18n="current_bay_label">현재 타석:</span>
+                <strong class="current-bay-number" id="displayBayNumber">-</strong>
+            </div>
+            
+            <button class="submit-btn send-btn" id="sendToProBtn" onclick="sendToProKim()">
+                🏌️ <span data-i18n="send_btn">김프로에게 전송</span>
+            </button>
+        </div>
+        
         <!-- Toast Notification -->
         <div class="toast" id="toast">
             <span class="toast-icon">✅</span>

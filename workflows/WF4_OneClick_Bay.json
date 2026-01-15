@@ -1,0 +1,206 @@
+{
+  "name": "WF4 - Dylan 원클릭 타석",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 16,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule: 목요일 16:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300],
+      "notes": "매주 목요일 16:30 (방콕시간)\n레슨 30분 전\n\n⚠️ 설정 필요:\n- Mode: Every Week\n- Weekday: Thursday\n- Hour: 16\n- Minute: 30\n- Timezone: Asia/Bangkok"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "databaseId": "0c5ee4b0-26ab-4f0a-9881-5453b072a0cb",
+        "returnAll": false,
+        "limit": 1,
+        "filterType": "none",
+        "sort": {
+          "sortValue": [
+            {
+              "key": "수업 날짜",
+              "type": "timestamp",
+              "direction": "descending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notion-get-lesson",
+      "name": "Notion: 오늘 레슨 조회",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [440, 300],
+      "credentials": {
+        "notionApi": {
+          "id": "notion-credential-id",
+          "name": "Notion API"
+        }
+      },
+      "notes": "최신 레슨 페이지 1개 조회\n\n설정:\n- Database: Golf Lesson\n- Return All: OFF\n- Limit: 1\n- Sort: 수업 날짜 Descending\n- Simplify: OFF"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 오늘 레슨 데이터 처리\nconst lesson = $input.first().json;\nconst props = lesson.properties;\n\n// 장소\nconst location = props['수업 장소']?.select?.name || '포탈라이';\n\n// 상태 확인\nconst status = props['상태']?.select?.name || '정상';\n\n// 타석 번호\nconst bayNumber = props['타석 번호']?.rich_text?.[0]?.plain_text || '';\n\n// 회차\nconst session = props['회차 ']?.title?.[0]?.plain_text || '';\n\n// Webhook URL for one-click\nconst webhookUrl = 'https://dylan-automation.app.n8n.cloud/webhook/golf-send-bay?session=' + session + '&bay=' + encodeURIComponent(bayNumber);\n\nreturn {\n  pageId: lesson.id,\n  session: session,\n  location: location,\n  status: status,\n  bayNumber: bayNumber,\n  hasBayNumber: bayNumber.length > 0,\n  isNormal: status === '정상',\n  webhookUrl: webhookUrl\n};"
+      },
+      "id": "code-process",
+      "name": "Code: 레슨 데이터 처리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300],
+      "notes": "레슨 데이터 파싱:\n- 상태 확인\n- 타석 번호 확인\n- Webhook URL 생성"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-normal",
+              "leftValue": "={{ $json.isNormal }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-has-bay",
+              "leftValue": "={{ $json.hasBayNumber }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-check",
+      "name": "IF: 정상 & 타석 있음",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 300],
+      "notes": "조건 확인:\n1. 상태 = 정상\n2. 타석 번호가 있음\n\n둘 다 만족해야 Dylan에게 원클릭 발송"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "lineNotifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U2168511c9cf9d66bb6cb0043f818bb1c\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n🏌️ 레슨 30분 전!\\n\\n📍 \" + $json.location + \"\\n🎯 타석: \" + $json.bayNumber + \"\\n\\n👇 타석 확인 & 김프로 전송\\nhttps://dylankwak57.github.io/golf-family-app/family.html\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}"
+      },
+      "id": "line-dylan",
+      "name": "Line: Dylan 원클릭",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-auth-id",
+          "name": "Line Bot Auth"
+        }
+      },
+      "notes": "Dylan에게 원클릭 타석 알림 발송\n\n링크 클릭 시 → WF4-Webhook으로 연결\n→ 김프로에게 타석 알림 자동 발송"
+    },
+    {
+      "parameters": {},
+      "id": "no-op",
+      "name": "No Operation: 스킵",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1100, 400],
+      "notes": "조건 미충족 시:\n- 상태가 '정상'이 아님\n- 또는 타석 번호가 없음\n\n→ 원클릭 발송하지 않음"
+    }
+  ],
+  "connections": {
+    "Schedule: 목요일 16:30": {
+      "main": [
+        [
+          {
+            "node": "Notion: 오늘 레슨 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 오늘 레슨 조회": {
+      "main": [
+        [
+          {
+            "node": "Code: 레슨 데이터 처리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 레슨 데이터 처리": {
+      "main": [
+        [
+          {
+            "node": "IF: 정상 & 타석 있음",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: 정상 & 타석 있음": {
+      "main": [
+        [
+          {
+            "node": "Line: Dylan 원클릭",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation: 스킵",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bangkok"
+  },
+  "tags": [
+    {
+      "name": "Golf Family"
+    }
+  ]
+}

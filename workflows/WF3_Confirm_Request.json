@@ -1,0 +1,234 @@
+{
+  "name": "WF3 - 레슨 확인 요청",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 14,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule: 수요일 14시",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300],
+      "notes": "매주 수요일 14:00 (방콕시간)\n\n⚠️ 설정 필요:\n- Mode: Every Week\n- Weekday: Wednesday\n- Hour: 14\n- Minute: 0\n- Timezone: Asia/Bangkok"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "databaseId": "0c5ee4b0-26ab-4f0a-9881-5453b072a0cb",
+        "returnAll": false,
+        "limit": 1,
+        "filterType": "none",
+        "sort": {
+          "sortValue": [
+            {
+              "key": "수업 날짜",
+              "type": "timestamp",
+              "direction": "descending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notion-get-lesson",
+      "name": "Notion: 이번주 레슨 조회",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [440, 300],
+      "credentials": {
+        "notionApi": {
+          "id": "notion-credential-id",
+          "name": "Notion API"
+        }
+      },
+      "notes": "최신 레슨 페이지 1개 조회\n\n설정:\n- Database: Golf Lesson\n- Return All: OFF\n- Limit: 1\n- Sort: 수업 날짜 Descending\n- Simplify: OFF"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 이번주 레슨 데이터 처리\nconst lesson = $input.first().json;\nconst props = lesson.properties;\n\n// 날짜 파싱\nconst lessonDateStr = props['수업 날짜']?.date?.start || '';\nconst lessonDate = new Date(lessonDateStr);\n\n// 한국어 요일\nconst koDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];\nconst dayOfWeek = koDays[lessonDate.getDay()];\n\n// 날짜 포맷 (YYYY-MM-DD)\nconst formattedDate = `${lessonDate.getFullYear()}-${String(lessonDate.getMonth() + 1).padStart(2, '0')}-${String(lessonDate.getDate()).padStart(2, '0')}`;\n\n// 장소\nconst location = props['수업 장소']?.select?.name || '포탈라이';\n\n// 상태 확인\nconst status = props['상태']?.select?.name || '정상';\n\n// 타석 번호\nconst bayNumber = props['타석 번호']?.rich_text?.[0]?.plain_text || '';\n\n// 회차\nconst session = props['회차 ']?.title?.[0]?.plain_text || '';\n\n// 확인 상태\nconst kimProConfirm = props['김프로 확인']?.checkbox || false;\nconst dylanConfirm = props['Dylan 확인']?.checkbox || false;\n\nreturn {\n  pageId: lesson.id,\n  session: session,\n  lessonDate: lessonDateStr,\n  formattedDate: formattedDate,\n  dayOfWeek: dayOfWeek,\n  location: location,\n  status: status,\n  bayNumber: bayNumber,\n  hasBayNumber: bayNumber.length > 0,\n  isNormal: status === '정상',\n  kimProConfirm: kimProConfirm,\n  dylanConfirm: dylanConfirm\n};"
+      },
+      "id": "code-process",
+      "name": "Code: 레슨 데이터 처리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300],
+      "notes": "레슨 데이터 파싱:\n- 한국어 요일 변환\n- 상태 확인\n- 타석 번호 확인\n- 확인 상태 확인"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-normal",
+              "leftValue": "={{ $json.isNormal }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-check",
+      "name": "IF: 상태 정상?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 300],
+      "notes": "조건 확인:\n- 상태 = 정상\n\n정상일 때만 확인 요청 발송"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "lineNotifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U2168511c9cf9d66bb6cb0043f818bb1c\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n📚 내일 골프 레슨 확인\\n\\n📅 \" + $json.dayOfWeek + \" (\" + $json.formattedDate + \")\\n⏰ 17:00 - 19:00\\n📍 \" + $json.location + ($json.hasBayNumber ? \"\\n🎯 타석: \" + $json.bayNumber : \"\") + \"\\n\\n👨‍👩‍👧‍👦 골린이: DYLAN, JAEWOO, AEEY, JIWOO\\n\\n✅ 확인하시면 클릭:\\n👉 https://dylankwak57.github.io/golf-family-app/family.html\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}"
+      },
+      "id": "line-kimpro",
+      "name": "Line: 김프로 확인 요청",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-auth-id",
+          "name": "Line Bot Auth"
+        }
+      },
+      "notes": "김프로에게 레슨 확인 요청 발송\n\n⚠️ 테스트 시 to를 Dylan ID로 변경:\nU2168511c9cf9d66bb6cb0043f818bb1c\n\n운영 시 복원:\nUb46e21fd3af428c831ffe3a1d3c23128"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "lineNotifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U2168511c9cf9d66bb6cb0043f818bb1c\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n📚 내일 골프 레슨 확인\\n\\n📅 \" + $json.dayOfWeek + \" (\" + $json.formattedDate + \")\\n⏰ 17:00 - 19:00\\n📍 \" + $json.location + ($json.hasBayNumber ? \"\\n🎯 타석: \" + $json.bayNumber : \"\") + \"\\n\\n👨‍👩‍👧‍👦 골린이: DYLAN, JAEWOO, AEEY, JIWOO\\n\\n✅ 확인하시면 클릭:\\n👉 https://dylankwak57.github.io/golf-family-app/family.html\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}"
+      },
+      "id": "line-dylan",
+      "name": "Line: Dylan 확인 요청",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 400],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-auth-id",
+          "name": "Line Bot Auth"
+        }
+      },
+      "notes": "Dylan에게 레슨 확인 요청 발송"
+    },
+    {
+      "parameters": {},
+      "id": "no-op",
+      "name": "No Operation: 스킵",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1100, 600],
+      "notes": "상태가 '정상'이 아닐 때:\n- 취소 또는 변경 상태\n\n→ 확인 요청 발송하지 않음"
+    }
+  ],
+  "connections": {
+    "Schedule: 수요일 14시": {
+      "main": [
+        [
+          {
+            "node": "Notion: 이번주 레슨 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 이번주 레슨 조회": {
+      "main": [
+        [
+          {
+            "node": "Code: 레슨 데이터 처리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 레슨 데이터 처리": {
+      "main": [
+        [
+          {
+            "node": "IF: 상태 정상?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: 상태 정상?": {
+      "main": [
+        [
+          {
+            "node": "Line: 김프로 확인 요청",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Line: Dylan 확인 요청",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation: 스킵",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bangkok"
+  },
+  "tags": [
+    {
+      "name": "Golf Family"
+    }
+  ]
+}
