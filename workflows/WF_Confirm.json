@@ -250,7 +250,7 @@
             "aeey@57tb.art"
           ],
           "location": "={{ $json.locationKo }}",
-          "description": "🏌️ 골프 레슨\n\n📅 {{ $json.formattedDateKo }}\n⏰ 17:00 - 19:00\n📍 {{ $json.locationKo }}\n🎯 타석: {{ $json.bayNumber }}\n\n👨‍👩‍👧‍👦 수강생: Dylan, JAEWOO, Aeey, JIWOO",
+          "description": "={{ '🏌️ 골프 레슨\\n\\n📅 ' + $json.formattedDateKo + '\\n⏰ 17:00 - 19:00\\n📍 ' + $json.locationKo + '\\n🎯 타석: ' + ($json.bayNumber || '-') + '\\n\\n👨‍👩‍👧‍👦 수강생: Dylan, JAEWOO, Aeey, JIWOO' }}",
           "guestsCanModify": true,
           "sendUpdates": "all"
         }
