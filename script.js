@@ -364,8 +364,20 @@ function updateConfirmation() {
     const dylanCheck = document.getElementById('confirmDylan');
     const confirmBtn = document.getElementById('confirmBtn');
     
-    if (kimProCheck && dylanCheck && confirmBtn) {
-        const bothChecked = kimProCheck.checked && dylanCheck.checked;
+    if (!confirmBtn) return;
+    
+    // 페이지별로 다른 조건 적용
+    const path = window.location.pathname;
+    
+    if (path.includes('kimpro.html')) {
+        // 김프로 페이지: 김프로 체크박스만 체크하면 활성화
+        confirmBtn.disabled = !kimProCheck?.checked;
+    } else if (path.includes('dylan.html')) {
+        // Dylan 페이지: Dylan 체크박스만 체크하면 활성화
+        confirmBtn.disabled = !dylanCheck?.checked;
+    } else {
+        // 기타 페이지: 둘 다 체크해야 활성화
+        const bothChecked = (kimProCheck?.checked || false) && (dylanCheck?.checked || false);
         confirmBtn.disabled = !bothChecked;
     }
 }
@@ -378,42 +390,57 @@ function onConfirmCheckboxChange(field) {
 
 // 확인 완료 버튼 클릭 시 노션에 저장
 async function submitConfirmation() {
-    const kimProCheck = document.getElementById('confirmKimPro');
-    const dylanCheck = document.getElementById('confirmDylan');
-    
-    if (!kimProCheck.checked || !dylanCheck.checked) {
-        showToast(t('toast_error'), 'error');
-        return;
-    }
-    
     if (!currentLessonData || !currentLessonData.pageId) {
         console.error('No lesson data available');
         showToast(t('toast_error'), 'error');
         return;
     }
     
+    const path = window.location.pathname;
+    
     try {
-        // 김프로 확인 업데이트
-        await sendToWebhook(CONFIG.webhooks.confirm, {
-            pageId: currentLessonData.pageId,
-            field: 'kimPro',
-            value: true,
-            timestamp: new Date().toISOString()
-        });
-        
-        // Dylan 확인 업데이트
-        await sendToWebhook(CONFIG.webhooks.confirm, {
-            pageId: currentLessonData.pageId,
-            field: 'dylan',
-            value: true,
-            timestamp: new Date().toISOString()
-        });
-        
-        // 로컬 데이터 업데이트
-        currentLessonData.kimProConfirm = true;
-        currentLessonData.dylanConfirm = true;
+        if (path.includes('kimpro.html')) {
+            // 김프로 페이지: 김프로 확인만 업데이트
+            await sendToWebhook(CONFIG.webhooks.confirm, {
+                pageId: currentLessonData.pageId,
+                field: 'kimPro',
+                value: true,
+                timestamp: new Date().toISOString()
+            });
+            currentLessonData.kimProConfirm = true;
+            
+        } else if (path.includes('dylan.html')) {
+            // Dylan 페이지: Dylan 확인만 업데이트
+            await sendToWebhook(CONFIG.webhooks.confirm, {
+                pageId: currentLessonData.pageId,
+                field: 'dylan',
+                value: true,
+                timestamp: new Date().toISOString()
+            });
+            currentLessonData.dylanConfirm = true;
+            
+        } else {
+            // 기타 페이지: 둘 다 업데이트
+            await sendToWebhook(CONFIG.webhooks.confirm, {
+                pageId: currentLessonData.pageId,
+                field: 'kimPro',
+                value: true,
+                timestamp: new Date().toISOString()
+            });
+            await sendToWebhook(CONFIG.webhooks.confirm, {
+                pageId: currentLessonData.pageId,
+                field: 'dylan',
+                value: true,
+                timestamp: new Date().toISOString()
+            });
+            currentLessonData.kimProConfirm = true;
+            currentLessonData.dylanConfirm = true;
+        }
         
         showToast(t('toast_confirm_success'), 'success');
+        
+        // 데이터 새로고침
+        loadLessonData();
         
     } catch (error) {
         console.error('Confirm update error:', error);
