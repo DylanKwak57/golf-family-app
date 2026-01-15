@@ -1,0 +1,213 @@
+{
+  "name": "Golf - Bay Number Input",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "golf-bay",
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "id": "a5281df5-39c9-4a0c-9c27-258961ec0e09",
+      "name": "Webhook: 타석 입력",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        300
+      ],
+      "webhookId": "golf-bay",
+      "notes": "MVP에서 타석 번호 입력 시 트리거\n\nURL: https://dylan-automation.app.n8n.cloud/webhook/golf-bay\n\nBody:\n- pageId: 노션 페이지 ID\n- bayNumber: 타석 번호 (예: 62-65)"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.body.pageId }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "타석 번호|rich_text",
+              "textContent": "={{ $json.body.bayNumber }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        112,
+        300
+      ],
+      "id": "e3f58b33-05d3-4fb6-af54-ec6370bea075",
+      "name": "Notion: 타석 번호 저장",
+      "credentials": {
+        "notionApi": {
+          "id": "AU29qZb94H2pm2jL",
+          "name": "Notion account"
+        }
+      },
+      "notes": "Bay Number 필드 업데이트"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "get",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.body.pageId }}",
+          "mode": "id"
+        },
+        "simple": false
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        320,
+        300
+      ],
+      "id": "64d26bb8-ce67-40a1-b003-25ad1132731a",
+      "name": "Notion: 레슨 정보 조회",
+      "credentials": {
+        "notionApi": {
+          "id": "AU29qZb94H2pm2jL",
+          "name": "Notion account"
+        }
+      },
+      "notes": "업데이트된 레슨 페이지 정보 조회\n(날짜, 장소 등 알림 메시지용)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 레슨 데이터 가공\nconst lesson = $input.first().json;\nconst props = lesson.properties;\n\n// 타석 번호 (방금 저장한 값)\nconst bayNumber = props['타석 번호']?.rich_text?.[0]?.plain_text || '';\n\n// 날짜 파싱\nconst lessonDateStr = props['수업 날짜']?.date?.start || '';\nconst lessonDate = new Date(lessonDateStr);\n\n// 한국어 요일\nconst koDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];\nconst dayOfWeekKo = koDays[lessonDate.getDay()];\n\n// 태국어 요일\nconst thDays = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];\nconst dayOfWeekTh = thDays[lessonDate.getDay()];\n\n// 날짜 포맷\nconst formattedDateKo = `${lessonDate.getFullYear()}-${String(lessonDate.getMonth() + 1).padStart(2, '0')}-${String(lessonDate.getDate()).padStart(2, '0')}`;\nconst formattedDateTh = `${String(lessonDate.getDate()).padStart(2, '0')}/${String(lessonDate.getMonth() + 1).padStart(2, '0')}/${lessonDate.getFullYear()}`;\n\n// 장소\nconst locationKo = props['수업 장소']?.select?.name || '포탈라이';\nconst locationTh = locationKo === '포탈라이' ? 'โปรทาลัย' : locationKo;\n\nreturn {\n  pageId: lesson.id,\n  bayNumber: bayNumber,\n  lessonDate: lessonDateStr,\n  formattedDateKo: formattedDateKo,\n  formattedDateTh: formattedDateTh,\n  dayOfWeekKo: dayOfWeekKo,\n  dayOfWeekTh: dayOfWeekTh,\n  locationKo: locationKo,\n  locationTh: locationTh\n};"
+      },
+      "id": "02c2b696-d632-4d16-9dbc-a710ff11ca73",
+      "name": "Code: 알림 데이터 가공",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        300
+      ],
+      "notes": "가족그룹 알림용 데이터 가공\n- 한국어/태국어 요일\n- 날짜 포맷\n- 장소 번역"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U2168511c9cf9d66bb6cb0043f818bb1c\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n🎯 타석 번호 등록완료\\n\\n📅 \" + $json.dayOfWeekKo + \" (\" + $json.formattedDateKo + \")\\n📍 \" + $json.locationKo + \"\\n🎯 Bay: \" + $json.bayNumber + \"번\\n\\n━━━━━━━━━━━━━━━━━━━━\\n🎯 ลงทะเบียนหมายเลข Bay แล้ว\\n\\n📅 \" + $json.dayOfWeekTh + \" (\" + $json.formattedDateTh + \")\\n📍 \" + $json.locationTh + \"\\n🎯 Bay: \" + $json.bayNumber + \"\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}",
+        "options": {}
+      },
+      "id": "512b6f63-3705-4cfc-831f-c2d88d092a9d",
+      "name": "Line: 가족그룹 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        736,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7StkXj4Oj8ZezOd6",
+          "name": "KFam-ZenQ"
+        }
+      },
+      "notes": "가족그룹에 타석 등록 알림 (한국어 + 태국어)\n\n⚠️ 테스트: Dylan ID (U2168511c9cf9d66bb6cb0043f818bb1c)\n운영: 가족그룹 ID (C20b8ad1ae43e07dcb067f6f38349b602)"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Bay number saved and notification sent\" } }}",
+        "options": {}
+      },
+      "id": "e5c1b32e-7e0c-4549-b062-68ac2f2cb2ef",
+      "name": "Respond: 성공",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        300
+      ],
+      "notes": "MVP에 성공 응답 반환"
+    }
+  ],
+  "connections": {
+    "Webhook: 타석 입력": {
+      "main": [
+        [
+          {
+            "node": "Notion: 타석 번호 저장",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 타석 번호 저장": {
+      "main": [
+        [
+          {
+            "node": "Notion: 레슨 정보 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 레슨 정보 조회": {
+      "main": [
+        [
+          {
+            "node": "Code: 알림 데이터 가공",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 알림 데이터 가공": {
+      "main": [
+        [
+          {
+            "node": "Line: 가족그룹 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line: 가족그룹 알림": {
+      "main": [
+        [
+          {
+            "node": "Respond: 성공",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "20298922d621602559fd122b2a5a456dd76c95af59a303f23bdb48333ec0e4fd"
+  }
+}
