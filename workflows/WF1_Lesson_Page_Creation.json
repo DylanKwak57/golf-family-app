@@ -1,0 +1,197 @@
+{
+  "name": "Golf WF1 - Lesson Page Creation",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [1],
+              "triggerAtHour": 11,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule: 월요일 11시",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "0c5ee4b0-26ab-4f0a-9881-5453b072a0cb",
+          "mode": "id"
+        },
+        "returnAll": false,
+        "limit": 1,
+        "sort": {
+          "sortValue": [
+            {
+              "key": "레슨 회차|number",
+              "type": "descending"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notion-get-latest",
+      "name": "Notion: 최신 레슨 조회",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [460, 300],
+      "credentials": {
+        "notionApi": {
+          "id": "YOUR_NOTION_CREDENTIAL_ID",
+          "name": "Notion API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 최신 레슨 데이터에서 다음 회차 계산\nconst latestLesson = $input.first().json;\n\n// 현재 회차 가져오기\nconst currentSession = latestLesson.properties['레슨 회차']?.number || 106;\nconst nextSession = currentSession + 1;\n\n// 다음 목요일 계산\nconst today = new Date();\nconst dayOfWeek = today.getDay();\nconst daysUntilThursday = (4 - dayOfWeek + 7) % 7 || 7; // 다음 목요일\nconst nextThursday = new Date(today);\nnextThursday.setDate(today.getDate() + daysUntilThursday);\n\n// ISO 날짜 형식\nconst lessonDate = nextThursday.toISOString().split('T')[0];\n\nreturn {\n  nextSession: nextSession,\n  lessonDate: lessonDate,\n  lessonTime: \"17:00\",\n  location: \"포탈라이\",\n  status: \"정상\",\n  lessonType: \"일반\"\n};"
+      },
+      "id": "code-calculate",
+      "name": "Code: 다음 회차 계산",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "create",
+        "databaseId": {
+          "__rl": true,
+          "value": "0c5ee4b0-26ab-4f0a-9881-5453b072a0cb",
+          "mode": "id"
+        },
+        "properties": {
+          "propertyValues": [
+            {
+              "key": "레슨 회차|number",
+              "numberValue": "={{ $json.nextSession }}"
+            },
+            {
+              "key": "레슨 날짜|date",
+              "dateValue": "={{ $json.lessonDate }}"
+            },
+            {
+              "key": "레슨 시간|rich_text",
+              "textValue": "={{ $json.lessonTime }}"
+            },
+            {
+              "key": "장소|select",
+              "selectValue": "={{ $json.location }}"
+            },
+            {
+              "key": "상태|select",
+              "selectValue": "={{ $json.status }}"
+            },
+            {
+              "key": "레슨 타입|select",
+              "selectValue": "={{ $json.lessonType }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notion-create-page",
+      "name": "Notion: 새 레슨 페이지 생성",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [900, 300],
+      "credentials": {
+        "notionApi": {
+          "id": "YOUR_NOTION_CREDENTIAL_ID",
+          "name": "Notion API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"C20b8ad1ae43e07dcb067f6f38349b602\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"🏌️ \" + $json.nextSession + \"회차 레슨 페이지가 생성되었습니다!\\n\\n📅 \" + $json.lessonDate + \" (목)\\n⏰ 17:00 - 19:00\\n📍 포탈라이\\n\\n🇹🇭 สร้างหน้าบทเรียนครั้งที่ \" + $json.nextSession + \" แล้ว!\"\n    }\n  ]\n} }}"
+      },
+      "id": "line-notify-family",
+      "name": "Line: 가족 그룹 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_LINE_CREDENTIAL_ID",
+          "name": "Line Bot Auth"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule: 월요일 11시": {
+      "main": [
+        [
+          {
+            "node": "Notion: 최신 레슨 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 최신 레슨 조회": {
+      "main": [
+        [
+          {
+            "node": "Code: 다음 회차 계산",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 다음 회차 계산": {
+      "main": [
+        [
+          {
+            "node": "Notion: 새 레슨 페이지 생성",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 새 레슨 페이지 생성": {
+      "main": [
+        [
+          {
+            "node": "Line: 가족 그룹 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bangkok"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "Golf Family"
+    }
+  ],
+  "triggerCount": 1
+}

@@ -1,0 +1,205 @@
+{
+  "name": "WF2 - Aeey 타석 리마인더",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 17,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule: 화요일 17시",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300],
+      "notes": "매주 화요일 17:00 (방콕시간)\n\n⚠️ 설정 필요:\n- Mode: Every Week\n- Weekday: Tuesday\n- Hour: 17\n- Minute: 0\n- Timezone: Asia/Bangkok"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "databaseId": "0c5ee4b0-26ab-4f0a-9881-5453b072a0cb",
+        "returnAll": false,
+        "limit": 1,
+        "filterType": "none",
+        "sort": {
+          "sortValue": [
+            {
+              "key": "수업 날짜",
+              "type": "timestamp",
+              "direction": "descending"
+            }
+          ]
+        }
+      },
+      "id": "notion-get-lesson",
+      "name": "Notion: 이번주 레슨 조회",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [440, 300],
+      "credentials": {
+        "notionApi": {
+          "id": "notion-credential-id",
+          "name": "Notion API"
+        }
+      },
+      "notes": "최신 레슨 페이지 1개 조회\n\n필터 (선택사항):\n- 상태 = 정상\n- 수업 날짜가 이번주"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 이번주 레슨 데이터 처리\nconst lesson = $input.first().json;\nconst props = lesson.properties;\n\n// 날짜 파싱\nconst lessonDateStr = props['수업 날짜']?.date?.start || '';\nconst lessonDate = new Date(lessonDateStr);\n\n// 태국어 요일 변환\nconst thaiDays = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];\nconst dayOfWeek = thaiDays[lessonDate.getDay()];\n\n// 날짜 포맷 (DD/MM/YYYY)\nconst formattedDate = `${String(lessonDate.getDate()).padStart(2, '0')}/${String(lessonDate.getMonth() + 1).padStart(2, '0')}/${lessonDate.getFullYear()}`;\n\n// 장소 (태국어 변환)\nconst location = props['수업 장소']?.select?.name || '포탈라이';\nconst locationTh = location === '포탈라이' ? 'โปรทาลัย' : location;\n\n// 상태 확인\nconst status = props['상태']?.select?.name || '정상';\n\n// 타석 번호 확인\nconst bayNumber = props['Bay Number']?.rich_text?.[0]?.plain_text || '';\n\n// 회차\nconst session = props['회차 ']?.title?.[0]?.plain_text || '';\n\nreturn {\n  pageId: lesson.id,\n  session: session,\n  lessonDate: lessonDateStr,\n  formattedDate: formattedDate,\n  dayOfWeek: dayOfWeek,\n  location: location,\n  locationTh: locationTh,\n  status: status,\n  bayNumber: bayNumber,\n  hasBayNumber: bayNumber.length > 0,\n  isNormal: status === '정상'\n};"
+      },
+      "id": "code-process",
+      "name": "Code: 레슨 데이터 처리",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, 300],
+      "notes": "레슨 데이터 파싱:\n- 태국어 요일 변환\n- 상태 확인\n- 타석 번호 유무 확인"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-normal",
+              "leftValue": "={{ $json.isNormal }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "condition-no-bay",
+              "leftValue": "={{ $json.hasBayNumber }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-check",
+      "name": "IF: 정상 & 타석 없음",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [880, 300],
+      "notes": "조건 확인:\n1. 상태 = 정상\n2. 타석 번호가 비어있음\n\n둘 다 만족해야 Aeey에게 리마인드"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "lineNotifyApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U1cb692b2a80455574c43cdc776e88250\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n🎯 จองหมายเลข Bay\\n\\n📅 \" + $json.dayOfWeek + \" (\" + $json.formattedDate + \")\\n⏰ 17:00 - 19:00\\n📍 \" + $json.locationTh + \"\\n\\nกรุณาจอง Bay แล้วกรอกหมายเลข:\\n👉 https://dylankwak57.github.io/golf-family-app/family.html?lang=th\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}"
+      },
+      "id": "line-aeey",
+      "name": "Line: Aeey 리마인드",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 200],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "line-auth-id",
+          "name": "Line Bot Auth"
+        }
+      },
+      "notes": "Aeey에게 타석 예약 리마인드 발송 (태국어)\n\n⚠️ 설정 필요:\nAuthentication: Header Auth\n- Name: Authorization\n- Value: Bearer {LINE_CHANNEL_ACCESS_TOKEN}"
+    },
+    {
+      "parameters": {},
+      "id": "no-op",
+      "name": "No Operation: 스킵",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1100, 400],
+      "notes": "조건 미충족 시:\n- 상태가 '정상'이 아님\n- 또는 이미 타석 번호가 입력됨\n\n→ 리마인드 발송하지 않음"
+    }
+  ],
+  "connections": {
+    "Schedule: 화요일 17시": {
+      "main": [
+        [
+          {
+            "node": "Notion: 이번주 레슨 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 이번주 레슨 조회": {
+      "main": [
+        [
+          {
+            "node": "Code: 레슨 데이터 처리",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 레슨 데이터 처리": {
+      "main": [
+        [
+          {
+            "node": "IF: 정상 & 타석 없음",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: 정상 & 타석 없음": {
+      "main": [
+        [
+          {
+            "node": "Line: Aeey 리마인드",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation: 스킵",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bangkok"
+  },
+  "tags": [
+    {
+      "name": "Golf Family"
+    }
+  ]
+}

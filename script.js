@@ -107,6 +107,26 @@ function applyTranslations() {
             el.textContent = translations[currentLang][key];
         }
     });
+    
+    // 회차 표시 업데이트 (언어 토글 시)
+    updateLessonNumberDisplay();
+}
+
+function updateLessonNumberDisplay() {
+    const lessonNumber = document.getElementById('lessonNumber');
+    if (lessonNumber) {
+        // 현재 표시된 숫자 추출
+        const currentText = lessonNumber.textContent;
+        const number = currentText.replace(/[^0-9]/g, '');
+        
+        if (number) {
+            if (currentLang === 'ko') {
+                lessonNumber.textContent = number + '회차';
+            } else {
+                lessonNumber.textContent = 'บทที่ ' + number;
+            }
+        }
+    }
 }
 
 function t(key) {
@@ -136,7 +156,12 @@ function loadLessonData() {
     // Update UI
     const lessonNumber = document.getElementById('lessonNumber');
     if (lessonNumber) {
-        lessonNumber.textContent = lessonData.number + '회차';
+        // 언어별 회차 표시
+        if (currentLang === 'ko') {
+            lessonNumber.textContent = lessonData.number + '회차';
+        } else {
+            lessonNumber.textContent = 'บทที่ ' + lessonData.number;  // 태국어: 레슨 번호
+        }
     }
     
     const lessonDate = document.getElementById('lessonDate');
