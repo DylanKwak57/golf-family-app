@@ -1,20 +1,19 @@
 {
-  "name": "WF-Confirm: MVP 확인 응답",
+  "name": "Golf - Confirm with Calendar",
   "nodes": [
     {
       "parameters": {
         "httpMethod": "POST",
         "path": "golf-confirm",
-        "options": {
-          "responseMode": "responseNode"
-        }
+        "responseMode": "responseNode",
+        "options": {}
       },
-      "id": "webhook-confirm",
+      "id": "0a4b8579-a684-48c1-8a6d-270948e9db74",
       "name": "Webhook: 확인 수신",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        0,
+        -128,
         300
       ],
       "webhookId": "golf-confirm",
@@ -43,12 +42,12 @@
         },
         "options": {}
       },
-      "id": "if-kimpro",
+      "id": "e4c26ad7-d9ad-481c-ad78-cc90c3e3d167",
       "name": "IF: 김프로 확인?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
       "position": [
-        220,
+        96,
         300
       ],
       "notes": "김프로 확인 vs Dylan 확인 분기"
@@ -62,21 +61,23 @@
           "value": "={{ $('Webhook: 확인 수신').first().json.body.pageId }}",
           "mode": "id"
         },
+        "simple": false,
         "propertiesUi": {
           "propertyValues": [
             {
-              "key": "김프로 확인|checkbox",
+              "key": "=김프로 확인|checkbox",
               "checkboxValue": true
             }
           ]
-        }
+        },
+        "options": {}
       },
-      "id": "notion-kimpro",
+      "id": "7208b15f-cb50-478c-a72d-68a8ae0d273b",
       "name": "Notion: 김프로 확인 ✅",
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        460,
+        320,
         200
       ],
       "credentials": {
@@ -96,21 +97,23 @@
           "value": "={{ $('Webhook: 확인 수신').first().json.body.pageId }}",
           "mode": "id"
         },
+        "simple": false,
         "propertiesUi": {
           "propertyValues": [
             {
-              "key": "Dylan 확인|checkbox",
+              "key": "=Dylan 확인|checkbox",
               "checkboxValue": true
             }
           ]
-        }
+        },
+        "options": {}
       },
-      "id": "notion-dylan",
+      "id": "2b952af6-812a-4516-aa2e-eb363407bab7",
       "name": "Notion: Dylan 확인 ✅",
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        460,
+        320,
         400
       ],
       "credentials": {
@@ -123,31 +126,217 @@
     },
     {
       "parameters": {
-        "options": {}
+        "resource": "databasePage",
+        "operation": "get",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Webhook: 확인 수신').first().json.body.pageId }}",
+          "mode": "id"
+        },
+        "simple": false
       },
-      "id": "respond-kimpro",
-      "name": "Respond: 김프로 성공",
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.1,
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "name": "Notion: 페이지 재조회",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
       "position": [
-        680,
-        200
+        544,
+        300
       ],
-      "notes": "김프로 확인 완료 응답"
+      "credentials": {
+        "notionApi": {
+          "id": "AU29qZb94H2pm2jL",
+          "name": "Notion account"
+        }
+      },
+      "notes": "업데이트된 페이지 다시 조회\n(둘 다 확인 여부 체크용)"
     },
     {
       "parameters": {
+        "jsCode": "// 페이지 데이터\nconst page = $input.first().json;\nconst props = page.properties;\n\n// 확인 상태\nconst kimProConfirm = props['김프로 확인']?.checkbox || false;\nconst dylanConfirm = props['Dylan 확인']?.checkbox || false;\nconst calendarRegistered = props['캘린더 등록']?.checkbox || false;\n\n// 둘 다 확인 & 캘린더 미등록\nconst bothConfirmed = kimProConfirm && dylanConfirm;\nconst needsCalendar = bothConfirmed && !calendarRegistered;\n\n// 날짜 파싱\nconst lessonDateStr = props['수업 날짜']?.date?.start || '';\nconst lessonDate = new Date(lessonDateStr);\n\n// 한국어/태국어 요일\nconst koDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];\nconst thDays = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];\nconst dayOfWeekKo = koDays[lessonDate.getDay()];\nconst dayOfWeekTh = thDays[lessonDate.getDay()];\n\n// 날짜 포맷\nconst formattedDateKo = `${lessonDate.getFullYear()}-${String(lessonDate.getMonth() + 1).padStart(2, '0')}-${String(lessonDate.getDate()).padStart(2, '0')}`;\nconst formattedDateTh = `${String(lessonDate.getDate()).padStart(2, '0')}/${String(lessonDate.getMonth() + 1).padStart(2, '0')}/${lessonDate.getFullYear()}`;\n\n// 장소\nconst locationKo = props['수업 장소']?.select?.name || '포탈라이';\nconst locationTh = locationKo === '포탈라이' ? 'โปรทาลัย' : locationKo;\n\n// 타석 번호\nconst bayNumber = props['타석 번호']?.rich_text?.[0]?.plain_text || '';\n\n// 회차\nconst session = props['회차 ']?.title?.[0]?.plain_text || '';\n\n// 캘린더 시작/종료 시간 (목요일 17:00-19:00)\nconst startTime = lessonDateStr + 'T17:00:00';\nconst endTime = lessonDateStr + 'T19:00:00';\n\nreturn {\n  pageId: page.id,\n  session: session,\n  lessonDate: lessonDateStr,\n  formattedDateKo: formattedDateKo,\n  formattedDateTh: formattedDateTh,\n  dayOfWeekKo: dayOfWeekKo,\n  dayOfWeekTh: dayOfWeekTh,\n  locationKo: locationKo,\n  locationTh: locationTh,\n  bayNumber: bayNumber,\n  kimProConfirm: kimProConfirm,\n  dylanConfirm: dylanConfirm,\n  bothConfirmed: bothConfirmed,\n  calendarRegistered: calendarRegistered,\n  needsCalendar: needsCalendar,\n  startTime: startTime,\n  endTime: endTime,\n  calendarTitle: '🏌️ 골프 레슨 (' + session + '회차)'\n};"
+      },
+      "id": "b2c3d4e5-f6a7-8901-bcde-f23456789012",
+      "name": "Code: 확인 상태 체크",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        300
+      ],
+      "notes": "둘 다 확인 여부 체크\n캘린더 등록 필요 여부 판단"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-needs-calendar",
+              "leftValue": "={{ $json.needsCalendar }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
         "options": {}
       },
-      "id": "respond-dylan",
-      "name": "Respond: Dylan 성공",
+      "id": "c3d4e5f6-a7b8-9012-cdef-345678901234",
+      "name": "IF: 캘린더 필요?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        992,
+        300
+      ],
+      "notes": "둘 다 확인 & 캘린더 미등록일 때만\n알림 + 캘린더 생성"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"to\": \"U2168511c9cf9d66bb6cb0043f818bb1c\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"━━━━━━━━━━━━━━━━━━━━\\n✅ 내일 골프 레슨 확정!\\n\\n📅 \" + $json.dayOfWeekKo + \" (\" + $json.formattedDateKo + \")\\n⏰ 17:00 - 19:00\\n📍 \" + $json.locationKo + ($json.bayNumber ? \"\\n🎯 타석: \" + $json.bayNumber + \"번\" : \"\") + \"\\n\\n🏌️ 김프로님 ✓ 확인완료\\n👨‍👩‍👧‍👦 Dylan ✓ 확인완료\\n\\n📅 캘린더에 등록되었습니다\\n\\n━━━━━━━━━━━━━━━━━━━━\\n✅ พรุ่งนี้เรียนกอล์ฟยืนยันแล้ว!\\n\\n📅 \" + $json.dayOfWeekTh + \" (\" + $json.formattedDateTh + \")\\n⏰ 17:00 - 19:00\\n📍 \" + $json.locationTh + ($json.bayNumber ? \"\\n🎯 Bay: \" + $json.bayNumber : \"\") + \"\\n\\n🏌️ โปรคิม ✓ ยืนยันแล้ว\\n👨‍👩‍👧‍👦 Dylan ✓ ยืนยันแล้ว\\n\\n📅 เพิ่มในปฏิทินแล้ว\\n━━━━━━━━━━━━━━━━━━━━\"\n    }\n  ]\n} }}",
+        "options": {}
+      },
+      "id": "d4e5f6a7-b8c9-0123-defa-456789012345",
+      "name": "Line: 가족그룹 확정 알림",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1216,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7StkXj4Oj8ZezOd6",
+          "name": "KFam-ZenQ"
+        }
+      },
+      "notes": "가족그룹에 레슨 확정 알림 (한국어 + 태국어)\n\n⚠️ 테스트: Dylan ID\n운영: 가족그룹 ID (C20b8ad1ae43e07dcb067f6f38349b602)"
+    },
+    {
+      "parameters": {
+        "resource": "event",
+        "calendar": {
+          "__rl": true,
+          "value": "dylan@57tb.art",
+          "mode": "id"
+        },
+        "title": "={{ $json.calendarTitle }}",
+        "start": "={{ $json.startTime }}",
+        "end": "={{ $json.endTime }}",
+        "additionalFields": {
+          "attendees": [
+            "aeey@57tb.art"
+          ],
+          "location": "={{ $json.locationKo }}",
+          "description": "🏌️ 골프 레슨\n\n📅 {{ $json.formattedDateKo }}\n⏰ 17:00 - 19:00\n📍 {{ $json.locationKo }}\n🎯 타석: {{ $json.bayNumber }}\n\n👨‍👩‍👧‍👦 수강생: Dylan, JAEWOO, Aeey, JIWOO",
+          "guestsCanModify": true,
+          "sendUpdates": "all"
+        }
+      },
+      "id": "e5f6a7b8-c9d0-1234-efab-567890123456",
+      "name": "Google Calendar: 일정 생성",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        200
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "GOOGLE_CALENDAR_CREDENTIAL_ID",
+          "name": "Google Calendar account"
+        }
+      },
+      "notes": "Dylan 캘린더에 일정 생성\nAeey 초대 포함\n\n⚠️ Credential ID 확인 필요!"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Code: 확인 상태 체크').first().json.pageId }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "=캘린더 등록|checkbox",
+              "checkboxValue": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f6a7b8c9-d0e1-2345-fabc-678901234567",
+      "name": "Notion: 캘린더 등록 ✅",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1664,
+        200
+      ],
+      "credentials": {
+        "notionApi": {
+          "id": "AU29qZb94H2pm2jL",
+          "name": "Notion account"
+        }
+      },
+      "notes": "캘린더 등록 완료 체크"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"calendarCreated\": true } }}",
+        "options": {}
+      },
+      "id": "a7b8c9d0-e1f2-3456-abcd-789012345678",
+      "name": "Respond: 캘린더 생성 완료",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        680,
+        1888,
+        200
+      ],
+      "notes": "캘린더까지 생성 완료 응답"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"calendarCreated\": false } }}",
+        "options": {}
+      },
+      "id": "b8c9d0e1-f2a3-4567-bcde-890123456789",
+      "name": "Respond: 확인만 완료",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1216,
         400
       ],
-      "notes": "Dylan 확인 완료 응답"
+      "notes": "확인만 완료 (캘린더 생성 불필요)\n- 아직 둘 다 확인 안됨\n- 또는 이미 캘린더 등록됨"
     }
   ],
   "connections": {
@@ -184,7 +373,7 @@
       "main": [
         [
           {
-            "node": "Respond: 김프로 성공",
+            "node": "Notion: 페이지 재조회",
             "type": "main",
             "index": 0
           }
@@ -195,7 +384,80 @@
       "main": [
         [
           {
-            "node": "Respond: Dylan 성공",
+            "node": "Notion: 페이지 재조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 페이지 재조회": {
+      "main": [
+        [
+          {
+            "node": "Code: 확인 상태 체크",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: 확인 상태 체크": {
+      "main": [
+        [
+          {
+            "node": "IF: 캘린더 필요?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: 캘린더 필요?": {
+      "main": [
+        [
+          {
+            "node": "Line: 가족그룹 확정 알림",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: 확인만 완료",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line: 가족그룹 확정 알림": {
+      "main": [
+        [
+          {
+            "node": "Google Calendar: 일정 생성",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar: 일정 생성": {
+      "main": [
+        [
+          {
+            "node": "Notion: 캘린더 등록 ✅",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion: 캘린더 등록 ✅": {
+      "main": [
+        [
+          {
+            "node": "Respond: 캘린더 생성 완료",
             "type": "main",
             "index": 0
           }
