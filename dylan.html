@@ -147,20 +147,7 @@
         // Dylan 페이지 - 한국어 고정, 전체 기능
         currentLang = 'ko';
         
-        document.addEventListener('DOMContentLoaded', function() {
-            loadLessonData();
-            
-            // 체크박스 이벤트 리스너
-            const kimProCheck = document.getElementById('confirmKimPro');
-            const dylanCheck = document.getElementById('confirmDylan');
-            
-            if (kimProCheck) {
-                kimProCheck.addEventListener('change', updateConfirmation);
-            }
-            if (dylanCheck) {
-                dylanCheck.addEventListener('change', updateConfirmation);
-            }
-        });
+        // loadLessonData() + 체크박스 리스너는 script.js DOMContentLoaded에서 처리 (중복 제거)
     </script>
 </body>
 </html>

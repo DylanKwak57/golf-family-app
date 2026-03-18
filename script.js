@@ -395,12 +395,18 @@ async function submitConfirmation() {
         showToast(t('toast_error'), 'error');
         return;
     }
-    
+
     const path = window.location.pathname;
-    
+    const btn = document.getElementById('confirmBtn');
+
+    // 즉시 비활성화 (중복 클릭 방지)
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ 처리중...';
+    }
+
     try {
         if (path.includes('kimpro.html')) {
-            // 김프로 페이지: 김프로 확인만 업데이트
             await sendToWebhook(CONFIG.webhooks.confirm, {
                 pageId: currentLessonData.pageId,
                 field: 'kimPro',
@@ -408,9 +414,8 @@ async function submitConfirmation() {
                 timestamp: new Date().toISOString()
             });
             currentLessonData.kimProConfirm = true;
-            
+
         } else if (path.includes('dylan.html')) {
-            // Dylan 페이지: Dylan 확인만 업데이트
             await sendToWebhook(CONFIG.webhooks.confirm, {
                 pageId: currentLessonData.pageId,
                 field: 'dylan',
@@ -418,9 +423,8 @@ async function submitConfirmation() {
                 timestamp: new Date().toISOString()
             });
             currentLessonData.dylanConfirm = true;
-            
+
         } else {
-            // 기타 페이지: 둘 다 업데이트
             await sendToWebhook(CONFIG.webhooks.confirm, {
                 pageId: currentLessonData.pageId,
                 field: 'kimPro',
@@ -436,15 +440,21 @@ async function submitConfirmation() {
             currentLessonData.kimProConfirm = true;
             currentLessonData.dylanConfirm = true;
         }
-        
+
         showToast(t('toast_confirm_success'), 'success');
-        
+        if (btn) btn.textContent = '✅ 확인 완료됨';
+
         // 데이터 새로고침
         loadLessonData();
-        
+
     } catch (error) {
         console.error('Confirm update error:', error);
         showToast(t('toast_error'), 'error');
+        // 에러 시 다시 활성화
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = t('confirm_submit');
+        }
     }
 }
 

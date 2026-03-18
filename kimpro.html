@@ -92,9 +92,7 @@
         // Pro Kim 페이지 - 한국어 고정
         currentLang = 'ko';
         
-        document.addEventListener('DOMContentLoaded', function() {
-            loadLessonData();
-        });
+        // loadLessonData()는 script.js DOMContentLoaded에서 호출됨 (중복 제거)
         
         // 체크박스 상태 업데이트
         function updateKimProConfirm() {
@@ -108,17 +106,23 @@
         // Pro Kim 확인 제출
         async function submitKimProConfirm() {
             const checkbox = document.getElementById('confirmKimPro');
-            
+            const btn = document.getElementById('confirmBtn');
+
             if (!checkbox.checked) {
                 showToast('체크박스를 먼저 체크해주세요', 'error');
                 return;
             }
-            
+
             if (!currentLessonData || !currentLessonData.pageId) {
                 showToast('레슨 데이터를 불러올 수 없습니다', 'error');
                 return;
             }
-            
+
+            // 즉시 비활성화 (중복 클릭 방지)
+            checkbox.disabled = true;
+            btn.disabled = true;
+            btn.textContent = '⏳ 처리중...';
+
             try {
                 await sendToWebhook(CONFIG.webhooks.confirm, {
                     pageId: currentLessonData.pageId,
@@ -126,15 +130,17 @@
                     value: true,
                     timestamp: new Date().toISOString()
                 });
-                
+
                 showToast('확인되었습니다! 감사합니다 🙏', 'success');
-                checkbox.disabled = true;
-                document.getElementById('confirmBtn').disabled = true;
-                document.getElementById('confirmBtn').textContent = '✅ 확인 완료됨';
-                
+                btn.textContent = '✅ 확인 완료됨';
+
             } catch (error) {
                 console.error('Confirm error:', error);
                 showToast('오류가 발생했습니다. 다시 시도해주세요.', 'error');
+                // 에러 시 다시 활성화
+                checkbox.disabled = false;
+                btn.disabled = false;
+                btn.textContent = '✅ 확인 완료';
             }
         }
     </script>
