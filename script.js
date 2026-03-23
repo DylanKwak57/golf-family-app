@@ -534,11 +534,11 @@ function showToast(message, type = 'success') {
     // Update icon and color based on type
     if (type === 'success') {
         toastIcon.textContent = '✅';
-        toast.style.background = 'linear-gradient(135deg, #d4a855, #b8942e)';
-        toast.style.color = '#0a0a0a';
+        toast.style.background = 'linear-gradient(135deg, #4A7C5F, #3D5A4C)';
+        toast.style.color = '#ffffff';
     } else if (type === 'error') {
         toastIcon.textContent = '❌';
-        toast.style.background = 'linear-gradient(135deg, #8b0000, #5c0000)';
+        toast.style.background = 'linear-gradient(135deg, #8b4049, #6a2f36)';
         toast.style.color = '#ffffff';
     }
     
