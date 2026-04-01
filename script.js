@@ -7,13 +7,13 @@
 // ========================================
 
 const CONFIG = {
-    // n8n Webhook URLs
+    // Vercel Webhook URLs (migrated from n8n 2026-04-01)
     webhooks: {
-        getLesson: 'https://dylan-automation.app.n8n.cloud/webhook/golf-get-lesson',
-        bayNumber: 'https://dylan-automation.app.n8n.cloud/webhook/golf-bay',
-        confirm: 'https://dylan-automation.app.n8n.cloud/webhook/golf-confirm',
-        sendBay: 'https://dylan-automation.app.n8n.cloud/webhook/golf-send-bay',
-        admin: 'https://dylan-automation.app.n8n.cloud/webhook/golf-admin'
+        getLesson: 'https://n8n-to-td.vercel.app/api/webhook/golf-get-lesson',
+        bayNumber: 'https://n8n-to-td.vercel.app/api/webhook/golf-bay',
+        confirm: 'https://n8n-to-td.vercel.app/api/webhook/golf-confirm',
+        sendBay: 'https://n8n-to-td.vercel.app/api/webhook/golf-send-bay',
+        admin: 'https://n8n-to-td.vercel.app/api/webhook/golf-admin'
     },
     // Notion Database ID
     notionDbId: '0c5ee4b0-26ab-4f0a-9881-5453b072a0cb'
