@@ -271,20 +271,25 @@ function updateStatusDisplay(status) {
 
 function submitBayNumber() {
     const input = document.getElementById('bayNumber');
+    const btn = document.getElementById('bayBtn');
     const value = input.value.trim();
-    
+
     if (!value) {
         showToast(t('toast_error'), 'error');
         return;
     }
-    
+
     // Validate format (e.g., 62-65 or 62,63,64,65)
     const isValid = /^[\d\-,\s]+$/.test(value);
     if (!isValid) {
         showToast(t('toast_error'), 'error');
         return;
     }
-    
+
+    if (btn?.disabled) return;
+    const btnHtml = btn?.innerHTML;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ ...'; }
+
     // Send to n8n webhook with pageId
     sendToWebhook(CONFIG.webhooks.bayNumber, {
         pageId: currentLessonData?.pageId || null,
@@ -302,6 +307,9 @@ function submitBayNumber() {
     })
     .catch(() => {
         showToast(t('toast_error'), 'error');
+    })
+    .finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = btnHtml; }
     });
 }
 
@@ -331,15 +339,20 @@ function sendToProKim() {
     // 현재 타석 번호 가져오기
     const bayInput = document.getElementById('bayNumber');
     const displayBay = document.getElementById('displayBayNumber');
-    
+    const btn = document.getElementById('sendToProBtn');
+
     // 입력 필드에 값이 있으면 그걸 사용, 아니면 표시된 값 사용
     const bayNumber = bayInput?.value?.trim() || displayBay?.textContent || currentBayNumber;
-    
+
     if (!bayNumber || bayNumber === '-') {
         showToast(t('toast_no_bay'), 'error');
         return;
     }
-    
+
+    if (btn?.disabled) return;
+    const btnHtml = btn?.innerHTML;
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ ...'; }
+
     // Send to n8n webhook with pageId and location
     sendToWebhook(CONFIG.webhooks.sendBay, {
         pageId: currentLessonData?.pageId || null,
@@ -352,6 +365,9 @@ function sendToProKim() {
     })
     .catch(() => {
         showToast(t('toast_error'), 'error');
+    })
+    .finally(() => {
+        if (btn) { btn.disabled = false; btn.innerHTML = btnHtml; }
     });
 }
 

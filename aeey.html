@@ -66,7 +66,7 @@
                     placeholder="62-65"
                     maxlength="20"
                 >
-                <button class="submit-btn bay-submit" onclick="submitBayNumber()">
+                <button id="bayBtn" class="submit-btn bay-submit" onclick="submitBayNumber()">
                     📤 ลงทะเบียน
                 </button>
             </div>
@@ -147,19 +147,23 @@
         // 타석 등록 (Aeey용 - 태국어 메시지)
         function submitBayNumber() {
             const input = document.getElementById('bayNumber');
+            const btn = document.getElementById('bayBtn');
             const value = input.value.trim();
-            
+
             if (!value) {
                 showToastTh('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
                 return;
             }
-            
+
             const isValid = /^[\d\-,\s]+$/.test(value);
             if (!isValid) {
                 showToastTh('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
                 return;
             }
-            
+
+            if (btn?.disabled) return;
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ กำลังส่ง...'; }
+
             sendToWebhook(CONFIG.webhooks.bayNumber, {
                 pageId: currentLessonData?.pageId || null,
                 bayNumber: value,
@@ -172,6 +176,9 @@
             })
             .catch(() => {
                 showToastTh('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+            })
+            .finally(() => {
+                if (btn) { btn.disabled = false; btn.textContent = '📤 ลงทะเบียน'; }
             });
         }
     </script>
