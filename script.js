@@ -232,6 +232,18 @@ function updateUIWithLessonData(data) {
     if (displayBayNumber) {
         displayBayNumber.textContent = data.bayNumber || '-';
     }
+
+    // 이미 김프로에게 전송됨(자동/수동) → 버튼 비활성화로 중복 발송 방지
+    const sendBtn = document.getElementById('sendToProBtn');
+    if (sendBtn) {
+        if (data.baySent) {
+            sendBtn.disabled = true;
+            sendBtn.textContent = '✅ 전송 완료됨';
+        } else {
+            sendBtn.disabled = false;
+            sendBtn.textContent = '🏌️ 김프로에게 전송';
+        }
+    }
     
     // 체크박스 상태 업데이트
     const kimProCheck = document.getElementById('confirmKimPro');
